@@ -1,0 +1,145 @@
+{
+  "id": "volley",
+  "name_ko": "발리 킥",
+  "name_en": "Volley",
+  "excel_name": "발리 킥",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "incoming",
+  "impact": {
+    "time": 0.43,
+    "contact_point": "instep",
+    "contact_height": 0.45,
+    "ball_foot_speed_ratio": 1.2,
+    "launch_angle_deg": 5,
+    "foot_yaw_deg": 10,
+    "aim_deg": 0,
+    "contact_offset_m": {"side": 0.0, "up": 0.008}
+  },
+  "rotation_notes": [
+    "들어오는 공의 궤적을 예측해 타이밍을 맞춤",
+    "사이드 발리는 고관절 외전 + 몸통 회전"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -10,
+      "r_knee": 40,
+      "r_ankle": 30,
+      "l_hip": 30,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 20,
+      "l_shoulder": -20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "날아오는 공의 궤적을 보며 위치를 잡는다 (예측 타이밍)."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.2,
+      "trunk": 5,
+      "r_hip": -20,
+      "r_knee": 60,
+      "r_ankle": 35,
+      "l_hip": 25,
+      "l_knee": 20,
+      "l_ankle": -3,
+      "r_shoulder": -10,
+      "l_shoulder": 40,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발을 단단히 고정하고 균형을 잡는다."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.3,
+      "trunk": 5,
+      "r_hip": -15,
+      "r_knee": 100,
+      "r_ankle": 45,
+      "l_hip": 20,
+      "l_knee": 25,
+      "l_ankle": -13,
+      "r_shoulder": -30,
+      "l_shoulder": 70,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.06,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "무릎을 접어 다리를 높이 들 준비를 한다."
+    },
+    {
+      "phase": "가속",
+      "t": 0.38,
+      "trunk": 8,
+      "r_hip": 40,
+      "r_knee": 90,
+      "r_ankle": 50,
+      "l_hip": 15,
+      "l_knee": 28,
+      "l_ankle": -24,
+      "r_shoulder": -20,
+      "l_shoulder": 60,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.1,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "고관절 굴곡으로 허벅지를 높이 끌어올린다."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.43,
+      "trunk": 10,
+      "r_hip": 75,
+      "r_knee": 25,
+      "r_ankle": 55,
+      "l_hip": 12,
+      "l_knee": 25,
+      "l_ankle": -26,
+      "r_shoulder": 0,
+      "l_shoulder": 50,
+      "r_elbow": 50,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.125,
+      "highlight": [
+        "r_hip",
+        "r_knee"
+      ],
+      "note": "몸통을 앞으로 숙여(약 +10°) 공을 덮어 찬다 → 공이 뜨지 않게 발사각을 낮춘다 (포물체 운동)."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.58,
+      "trunk": 5,
+      "r_hip": 90,
+      "r_knee": 15,
+      "r_ankle": 45,
+      "l_hip": 8,
+      "l_knee": 20,
+      "l_ankle": -20,
+      "r_shoulder": 25,
+      "l_shoulder": 25,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.08,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "공중 동작 후 균형 회복. 착지 부하에 주의 (부상 위험)."
+    }
+  ]
+}

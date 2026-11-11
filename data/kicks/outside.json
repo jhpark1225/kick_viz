@@ -1,0 +1,144 @@
+{
+  "id": "outside",
+  "name_ko": "아웃사이드 킥",
+  "name_en": "Outside",
+  "excel_name": "아웃사이드 킥",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "ground",
+  "impact": {
+    "time": 0.41,
+    "contact_point": "outside",
+    "contact_height": 0.11,
+    "ball_foot_speed_ratio": 1.15,
+    "launch_angle_deg": 12,
+    "foot_yaw_deg": -30,
+    "aim_deg": 6,
+    "contact_offset_m": {"side": -0.018, "up": 0.0}
+  },
+  "rotation_notes": [
+    "고관절 내회전 + 발목 내번으로 발 바깥 면을 정렬",
+    "공 중심 밖 타격 → 바깥쪽으로 휘는 회전"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -10,
+      "r_knee": 45,
+      "r_ankle": 30,
+      "l_hip": 30,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 20,
+      "l_shoulder": -20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "평소 달리기 자세로 접근해 킥 의도를 숨긴다."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.2,
+      "trunk": 0,
+      "r_hip": -20,
+      "r_knee": 60,
+      "r_ankle": 40,
+      "l_hip": 25,
+      "l_knee": 20,
+      "l_ankle": 2,
+      "r_shoulder": -10,
+      "l_shoulder": 40,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발은 공보다 약간 옆·뒤에 딛는다."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.29,
+      "trunk": -3,
+      "r_hip": -22,
+      "r_knee": 90,
+      "r_ankle": 45,
+      "l_hip": 20,
+      "l_knee": 25,
+      "l_ankle": -5,
+      "r_shoulder": -20,
+      "l_shoulder": 60,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "백스윙이 짧다. 동작 노출을 줄이기 위해 무릎만 빠르게 접는다 (작은 가동범위)."
+    },
+    {
+      "phase": "가속",
+      "t": 0.36,
+      "trunk": -5,
+      "r_hip": 10,
+      "r_knee": 85,
+      "r_ankle": 45,
+      "l_hip": 15,
+      "l_knee": 28,
+      "l_ankle": -11,
+      "r_shoulder": -15,
+      "l_shoulder": 55,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.08,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "고관절 내회전과 함께 다리가 앞으로 나온다."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.41,
+      "trunk": -8,
+      "r_hip": 20,
+      "r_knee": 50,
+      "r_ankle": 45,
+      "l_hip": 10,
+      "l_knee": 25,
+      "l_ankle": -10,
+      "r_shoulder": 0,
+      "l_shoulder": 45,
+      "r_elbow": 50,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.147,
+      "highlight": [
+        "r_ankle"
+      ],
+      "note": "발목 저측굴곡·내번 자세로 발 바깥 면이 공 중심 바깥을 친다 → 토크로 회전 발생 (각운동역학)."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.56,
+      "trunk": -12,
+      "r_hip": 55,
+      "r_knee": 20,
+      "r_ankle": 40,
+      "l_hip": 5,
+      "l_knee": 20,
+      "l_ankle": -6,
+      "r_shoulder": 25,
+      "l_shoulder": 20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_ankle"
+      ],
+      "note": "짧게 끊는다. 내번 자세 반복은 발목 외측 인대 부하에 주의 (부상 위험)."
+    }
+  ]
+}

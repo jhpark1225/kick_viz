@@ -1,0 +1,1588 @@
+{
+  "instep": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 106,
+      "good_range": [
+        91,
+        121
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -31,
+      "good_range": [
+        -46,
+        -16
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 59,
+      "good_range": [
+        40,
+        60
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true,
+      "note": "CLAUDE.md 9장 선행연구 범위 (임팩트 무릎 40~60°)"
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 53,
+      "good_range": [
+        38,
+        68
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -10,
+      "good_range": [
+        -25,
+        5
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 26,
+      "good_range": [
+        11,
+        41
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 69,
+      "good_range": [
+        54,
+        84
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 1464,
+      "good_range": [
+        1350,
+        2500
+      ],
+      "tol": 250,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true,
+      "note": "선행연구 범위 1500~2500°/s (CLAUDE.md 9장). 영상(120 fps, 25 Hz 필터) 측정은 최고점이 약 5~10% 낮게 나오므로 하한을 10% 낮춰 1350°/s로 보정했다. 템플릿(약 1500°/s)도 측정값은 약 1460°/s."
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 12.5,
+      "good_range": [
+        9.4,
+        15.7
+      ],
+      "tol": 3.1,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 50,
+      "good_range": [
+        35,
+        65
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.108,
+      "good_range": [
+        0.076,
+        0.141
+      ],
+      "tol": 0.033,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "inside": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 70,
+      "good_range": [
+        55,
+        85
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -20,
+      "good_range": [
+        -35,
+        -5
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 47,
+      "good_range": [
+        32,
+        62
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 10,
+      "good_range": [
+        -5,
+        25
+      ],
+      "tol": 15,
+      "low_msg": "발목을 너무 당겼습니다(배측굴곡). 발 안쪽 면이 공에 수직으로 닿도록 발목을 직각 가까이 고정하세요.",
+      "high_msg": "발목을 세워(발끝을 들어) 고정하세요. 발 안쪽의 넓은 면이 공에 닿아야 방향이 정확해집니다.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -5,
+      "good_range": [
+        -20,
+        10
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 25,
+      "good_range": [
+        10,
+        40
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 49,
+      "good_range": [
+        34,
+        64
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 862,
+      "good_range": [
+        647,
+        1078
+      ],
+      "tol": 216,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 8.7,
+      "good_range": [
+        6.5,
+        10.9
+      ],
+      "tol": 2.2,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 35,
+      "good_range": [
+        20,
+        50
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.108,
+      "good_range": [
+        0.076,
+        0.141
+      ],
+      "tol": 0.033,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "outside": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 91,
+      "good_range": [
+        76,
+        106
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -23,
+      "good_range": [
+        -38,
+        -8
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 55,
+      "good_range": [
+        40,
+        70
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 45,
+      "good_range": [
+        30,
+        60
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -9,
+      "good_range": [
+        -24,
+        6
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 25,
+      "good_range": [
+        10,
+        40
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 54,
+      "good_range": [
+        39,
+        69
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 1144,
+      "good_range": [
+        858,
+        1430
+      ],
+      "tol": 286,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 10.7,
+      "good_range": [
+        8.1,
+        13.4
+      ],
+      "tol": 2.7,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 44,
+      "good_range": [
+        29,
+        59
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.1,
+      "good_range": [
+        0.07,
+        0.13
+      ],
+      "tol": 0.03,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "curve": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 106,
+      "good_range": [
+        91,
+        121
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -31,
+      "good_range": [
+        -46,
+        -16
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 59,
+      "good_range": [
+        44,
+        74
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 35,
+      "good_range": [
+        20,
+        50
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -16,
+      "good_range": [
+        -31,
+        -1
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 26,
+      "good_range": [
+        11,
+        41
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 59,
+      "good_range": [
+        44,
+        74
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 1466,
+      "good_range": [
+        1100,
+        1833
+      ],
+      "tol": 367,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 13.3,
+      "good_range": [
+        10.0,
+        16.6
+      ],
+      "tol": 3.3,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 55,
+      "good_range": [
+        40,
+        70
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.108,
+      "good_range": [
+        0.076,
+        0.141
+      ],
+      "tol": 0.033,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "chip": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 90,
+      "good_range": [
+        75,
+        105
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -23,
+      "good_range": [
+        -38,
+        -8
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 59,
+      "good_range": [
+        44,
+        74
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 20,
+      "good_range": [
+        5,
+        35
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -8,
+      "good_range": [
+        -23,
+        7
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 26,
+      "good_range": [
+        11,
+        41
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 30,
+      "good_range": [
+        null,
+        45
+      ],
+      "tol": 15,
+      "low_msg": "",
+      "high_msg": "팔로스루를 짧게 끊으세요. 로빙은 공 아래를 찍고 다리를 멈춰야 백스핀이 걸리고 공이 높이 뜹니다.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true,
+      "direction": "작을수록 좋음"
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 907,
+      "good_range": [
+        680,
+        1133
+      ],
+      "tol": 227,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 8.8,
+      "good_range": [
+        6.6,
+        11.0
+      ],
+      "tol": 2.2,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 40,
+      "good_range": [
+        25,
+        55
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.108,
+      "good_range": [
+        0.076,
+        0.141
+      ],
+      "tol": 0.033,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "volley": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 100,
+      "good_range": [
+        85,
+        115
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -19,
+      "good_range": [
+        -34,
+        -4
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 39,
+      "good_range": [
+        24,
+        54
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 54,
+      "good_range": [
+        39,
+        69
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": 11,
+      "good_range": [
+        -4,
+        26
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 26,
+      "good_range": [
+        11,
+        41
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 90,
+      "good_range": [
+        75,
+        105
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 2476,
+      "good_range": [
+        1857,
+        3095
+      ],
+      "tol": 619,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 27.0,
+      "good_range": [
+        20.2,
+        33.7
+      ],
+      "tol": 6.7,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 52,
+      "good_range": [
+        37,
+        67
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.117,
+      "good_range": [
+        0.082,
+        0.152
+      ],
+      "tol": 0.035,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "toe": [
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -18,
+      "good_range": [
+        -33,
+        -3
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 46,
+      "good_range": [
+        31,
+        61
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 0,
+      "good_range": [
+        -15,
+        15
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": -7,
+      "good_range": [
+        -22,
+        8
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 25,
+      "good_range": [
+        10,
+        40
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 39,
+      "good_range": [
+        24,
+        54
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 1229,
+      "good_range": [
+        922,
+        1536
+      ],
+      "tol": 307,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 12.0,
+      "good_range": [
+        9.0,
+        15.0
+      ],
+      "tol": 3.0,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 33,
+      "good_range": [
+        18,
+        48
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.075,
+      "good_range": [
+        0.052,
+        0.098
+      ],
+      "tol": 0.022,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ],
+  "half_volley": [
+    {
+      "id": "backswing_knee",
+      "phase": "백스윙",
+      "metric": "max_r_knee_flex",
+      "unit": "°",
+      "template_value": 97,
+      "good_range": [
+        82,
+        112
+      ],
+      "tol": 15,
+      "low_msg": "백스윙에서 무릎을 더 접으세요. 다리를 접으면 회전축(고관절)에 대한 관성모멘트가 줄어 허벅지를 더 빨리 휘두를 수 있습니다.",
+      "high_msg": "무릎을 과도하게 접었습니다. 펴야 할 각도가 커져 임팩트 타이밍이 늦어질 수 있습니다.",
+      "weight": 3,
+      "concept": "각운동역학: 관성모멘트",
+      "is_example": true
+    },
+    {
+      "id": "backswing_hip_ext",
+      "phase": "백스윙",
+      "metric": "min_r_hip_ext",
+      "unit": "°",
+      "template_value": -22,
+      "good_range": [
+        -37,
+        -7
+      ],
+      "tol": 15,
+      "low_msg": "고관절을 너무 뒤로 젖혔습니다. 허리가 과도하게 젖혀지면 허리·고관절 앞쪽의 부하가 커질 수 있습니다.",
+      "high_msg": "백스윙에서 허벅지를 더 뒤로 보내세요. 고관절 굴곡근(장요근·대퇴직근)이 먼저 늘어나야 신장-단축 주기(SSC)로 더 큰 힘을 낼 수 있습니다.",
+      "weight": 2,
+      "concept": "근골격계: 신장-단축 주기 SSC",
+      "is_example": true
+    },
+    {
+      "id": "impact_knee",
+      "phase": "임팩트",
+      "metric": "impact_r_knee_flex",
+      "unit": "°",
+      "template_value": 53,
+      "good_range": [
+        38,
+        68
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 무릎이 이미 많이 펴져 있습니다. 무릎이 빠르게 펴지는 도중에 공을 맞혀야 정강이 각속도를 공에 전달할 수 있습니다.",
+      "high_msg": "임팩트 때 무릎이 많이 굽어 있습니다. 무릎을 펴는 동작이 덜 진행된 채 공을 맞혀 정강이 속도를 다 쓰지 못했을 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "impact_ankle",
+      "phase": "임팩트",
+      "metric": "impact_r_ankle_pf",
+      "unit": "°",
+      "template_value": 59,
+      "good_range": [
+        44,
+        74
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 발목을 더 펴서(발끝을 아래로) 단단히 고정하세요. 발목이 고정돼야 충돌 때 발이 덜 꺾여 운동량이 공에 잘 전달됩니다(공/발 속도비 증가).",
+      "high_msg": "임팩트 때 발목을 너무 많이 폈습니다. 이 킥에 맞는 발 부위로 공을 맞히려면 발목 각도를 조금 더 세워 고정하세요.",
+      "weight": 3,
+      "concept": "선운동역학: 운동량 전달",
+      "is_example": true
+    },
+    {
+      "id": "impact_trunk",
+      "phase": "임팩트",
+      "metric": "impact_trunk",
+      "unit": "°",
+      "template_value": 6,
+      "good_range": [
+        -9,
+        21
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 몸이 너무 뒤로 젖혀졌습니다. 몸통이 뒤로 기울면 공 아래쪽을 차게 되어 발사각이 커지고 공이 뜹니다.",
+      "high_msg": "임팩트 때 몸이 너무 앞으로 숙여졌습니다. 공을 눌러 차게 되어 발사각이 너무 낮아질 수 있습니다.",
+      "weight": 2,
+      "concept": "포물체 운동: 발사각",
+      "is_example": true
+    },
+    {
+      "id": "plant_knee",
+      "phase": "임팩트",
+      "metric": "impact_l_knee_flex",
+      "unit": "°",
+      "template_value": 30,
+      "good_range": [
+        15,
+        45
+      ],
+      "tol": 15,
+      "low_msg": "디딤발 무릎을 조금 더 굽히세요. 무릎을 살짝 굽혀야 지면반력을 흡수하고 균형을 유지하기 쉽습니다.",
+      "high_msg": "디딤발 무릎이 많이 굽었습니다. 디딤다리가 내려앉으면 차는 다리의 회전 공간과 힘 전달이 줄 수 있습니다.",
+      "weight": 1,
+      "concept": "선운동역학: 지면반력·안정",
+      "is_example": true
+    },
+    {
+      "id": "followthrough_hip",
+      "phase": "팔로스루",
+      "metric": "followthrough_r_hip_flex",
+      "unit": "°",
+      "template_value": 70,
+      "good_range": [
+        55,
+        85
+      ],
+      "tol": 15,
+      "low_msg": "팔로스루를 더 길게 가져가세요. 다리를 급하게 멈추면 햄스트링이 짧은 시간에 큰 감속을 해야 해서 부하가 커질 수 있습니다.",
+      "high_msg": "팔로스루에서 다리가 과도하게 올라갑니다. 햄스트링이 늘어난 상태의 감속 부하가 커질 수 있으니 상체와 함께 자연스럽게 마무리하세요.",
+      "weight": 2,
+      "concept": "부상 위험: 햄스트링 감속 부하",
+      "is_example": true
+    },
+    {
+      "id": "sequence",
+      "phase": "가속",
+      "metric": "sequence_ok",
+      "unit": "",
+      "expected": true,
+      "fail_msg": "정강이가 허벅지보다 먼저 최고 속도에 도달했습니다. 허벅지를 먼저 앞으로 휘두른 뒤 감속시키면 각운동량이 정강이로 전달됩니다(채찍 효과).",
+      "weight": 3,
+      "concept": "근위→원위 순차",
+      "is_example": true
+    },
+    {
+      "id": "shank_speed",
+      "phase": "가속",
+      "metric": "peak_shank_ang_vel",
+      "unit": "°/s",
+      "template_value": 2274,
+      "good_range": [
+        1706,
+        2843
+      ],
+      "tol": 569,
+      "low_msg": "정강이(무릎 아래)를 더 빠르게 휘두르세요. 허벅지를 먼저 휘두른 뒤 감속하면 정강이 각속도가 커집니다(채찍 효과).",
+      "high_msg": "정강이 각속도가 기준보다 큽니다. 모션 블러 등 측정 오차일 수 있으니 슬로모션 영상으로 다시 확인해 보세요.",
+      "weight": 2,
+      "concept": "각운동학",
+      "is_example": true
+    },
+    {
+      "id": "foot_speed",
+      "phase": "임팩트",
+      "metric": "foot_speed_impact",
+      "unit": "m/s",
+      "template_value": 24.5,
+      "good_range": [
+        18.4,
+        30.6
+      ],
+      "tol": 6.1,
+      "low_msg": "임팩트 직전 발 속도를 높이세요. 공 속도 ≈ 발 속도 × 공/발 속도비이므로 발 속도가 공 속도를 결정합니다.",
+      "high_msg": "발 속도가 기준보다 빠릅니다. 이 킥은 정확도가 중요하니 속도보다 접촉 부위와 방향을 먼저 맞추세요.",
+      "weight": 2,
+      "concept": "선운동학: 속도",
+      "is_example": true
+    },
+    {
+      "id": "arm_balance",
+      "phase": "임팩트",
+      "metric": "arm_balance",
+      "unit": "°",
+      "template_value": 47,
+      "good_range": [
+        32,
+        62
+      ],
+      "tol": 15,
+      "low_msg": "임팩트 때 차는 다리 반대쪽 팔을 앞·옆으로 더 들어 올리세요. 팔이 다리의 회전(각운동량)을 상쇄해 몸의 균형을 잡아 줍니다.",
+      "high_msg": "반대팔을 너무 높이 들었습니다. 상체가 뒤로 젖혀지거나 균형이 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "균형 (각운동량 보존)",
+      "is_example": true
+    },
+    {
+      "id": "kick_duration",
+      "phase": "백스윙→임팩트",
+      "metric": "kick_duration",
+      "unit": "s",
+      "template_value": 0.1,
+      "good_range": [
+        0.07,
+        0.13
+      ],
+      "tol": 0.03,
+      "low_msg": "백스윙에서 임팩트까지가 너무 짧습니다. 다리를 충분히 끌어온 뒤 휘둘러야 가속할 시간이 확보됩니다.",
+      "high_msg": "백스윙에서 임팩트까지가 깁니다. 동작이 느리면 각속도가 떨어지고 상대에게 읽히기 쉽습니다.",
+      "weight": 1,
+      "concept": "선운동학: 시간",
+      "is_example": true
+    }
+  ]
+}

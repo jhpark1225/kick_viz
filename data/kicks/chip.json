@@ -1,0 +1,141 @@
+{
+  "id": "chip",
+  "name_ko": "로빙",
+  "name_en": "Lob / Chip",
+  "excel_name": "로빙",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "ground",
+  "impact": {
+    "time": 0.42,
+    "contact_point": "under",
+    "contact_height": 0.04,
+    "ball_foot_speed_ratio": 0.9,
+    "launch_angle_deg": 50,
+    "foot_yaw_deg": 5,
+    "aim_deg": 0,
+    "contact_offset_m": {"side": 0.0, "up": -0.03}
+  },
+  "rotation_notes": [
+    "공 아래를 찍어 차 백스핀 발생"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -8,
+      "r_knee": 45,
+      "r_ankle": 20,
+      "l_hip": 28,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 15,
+      "l_shoulder": -15,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "골키퍼 위치를 보며 접근한다 (시각-운동 협응)."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.2,
+      "trunk": 0,
+      "r_hip": -20,
+      "r_knee": 60,
+      "r_ankle": 20,
+      "l_hip": 25,
+      "l_knee": 20,
+      "l_ankle": 2,
+      "r_shoulder": -10,
+      "l_shoulder": 35,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발을 공 가까이 딛는다."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.29,
+      "trunk": -3,
+      "r_hip": -22,
+      "r_knee": 90,
+      "r_ankle": 20,
+      "l_hip": 20,
+      "l_knee": 25,
+      "l_ankle": -5,
+      "r_shoulder": -20,
+      "l_shoulder": 50,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "백스윙이 짧다. 큰 힘보다 정밀한 힘 조절이 중요하다."
+    },
+    {
+      "phase": "가속",
+      "t": 0.37,
+      "trunk": -5,
+      "r_hip": 5,
+      "r_knee": 80,
+      "r_ankle": 20,
+      "l_hip": 15,
+      "l_knee": 28,
+      "l_ankle": -11,
+      "r_shoulder": -10,
+      "l_shoulder": 45,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.07,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "발끝을 공 아래로 넣을 준비를 한다."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.42,
+      "trunk": -8,
+      "r_hip": 15,
+      "r_knee": 55,
+      "r_ankle": 20,
+      "l_hip": 10,
+      "l_knee": 25,
+      "l_ankle": -10,
+      "r_shoulder": 0,
+      "l_shoulder": 40,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.101,
+      "highlight": [
+        "r_ankle"
+      ],
+      "note": "발끝으로 공 아래를 짧고 급하게 찍는다 → 수직 충격량 비중이 커져 발사각이 크다 (선운동역학)."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.55,
+      "trunk": -8,
+      "r_hip": 30,
+      "r_knee": 40,
+      "r_ankle": 20,
+      "l_hip": 8,
+      "l_knee": 22,
+      "l_ankle": -9,
+      "r_shoulder": 10,
+      "l_shoulder": 30,
+      "r_elbow": 40,
+      "l_elbow": 35,
+      "kick_hip_lift": 0.05,
+      "highlight": [],
+      "note": "팔로스루가 거의 없다(고관절 굴곡 최대 약 30°)."
+    }
+  ]
+}

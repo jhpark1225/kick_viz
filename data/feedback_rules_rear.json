@@ -1,0 +1,72 @@
+{
+  "_note": "후면(관상면) 영상 피드백 기준. 모두 교육용 근사값이다. 측면 규칙(feedback_rules.json)과 달리 킥 템플릿에는 관상면 각도가 없어(측면 2D 모델) 공통 기준을 쓴다. 골반 기울기 상한은 템플릿의 kick_hip_lift(골반 경사 + 몸 옆 기울기를 합친 보정값)를 3D로 본 값(약 23~37°)을 포함하도록 40°로 두었다.",
+  "default": [
+    {
+      "id": "plant_knee_valgus",
+      "phase": "디딤~임팩트",
+      "metric": "stance_knee_valgus",
+      "unit": "°",
+      "good_range": [null, 10],
+      "tol": 5,
+      "low_msg": "",
+      "high_msg": "디딤 무릎이 안쪽으로 모입니다(외반). 무릎이 발끝과 같은 방향을 향하도록 디딤다리를 버티세요. 무릎이 안쪽으로 무너진 채 체중을 받으면 무릎 안쪽 인대 쪽 부하가 커질 수 있습니다.",
+      "weight": 3,
+      "concept": "부상 위험: 무릎 부하 · 관상면",
+      "is_example": true,
+      "note": "디딤 순간부터 임팩트 직후까지의 최대값. 고관절이 돌아간 상태에서 무릎을 굽히면 뒤에서 볼 때 외반처럼 보일 수 있다."
+    },
+    {
+      "id": "trunk_side_lean",
+      "phase": "임팩트",
+      "metric": "trunk_lateral_lean",
+      "unit": "°",
+      "good_range": [-5, 30],
+      "tol": 10,
+      "low_msg": "몸통이 차는 다리 쪽으로 기울었습니다. 디딤발 쪽으로 몸을 살짝 기울여야 무게중심이 디딤발 위에 놓이고 차는 다리가 지나갈 공간이 생깁니다.",
+      "high_msg": "몸통이 디딤발 쪽으로 너무 많이 기울었습니다. 균형을 잃기 쉽고 공이 옆으로 빗나갈 수 있습니다.",
+      "weight": 2,
+      "concept": "각운동역학: 무게중심·균형",
+      "is_example": true
+    },
+    {
+      "id": "pelvis_tilt",
+      "phase": "임팩트",
+      "metric": "pelvic_obliquity",
+      "unit": "°",
+      "good_range": [0, 40],
+      "tol": 8,
+      "low_msg": "차는 쪽 골반이 내려가 있습니다. 디딤다리 엉덩이 옆 근육(중둔근)으로 골반을 받쳐 차는 쪽을 살짝 들어 올리면 다리가 땅에 걸리지 않고 휘두를 공간이 생깁니다.",
+      "high_msg": "골반이 과도하게 기울었습니다. 허리 옆쪽 부하가 커질 수 있으니 상체와 함께 자연스럽게 기울이세요.",
+      "weight": 2,
+      "concept": "근골격계: 중둔근 · 관상면",
+      "is_example": true
+    },
+    {
+      "id": "plant_foot_side",
+      "phase": "임팩트",
+      "metric": "plant_foot_distance",
+      "unit": "m",
+      "good_range": [0.15, 0.40],
+      "tol": 0.08,
+      "low_msg": "디딤발이 차는 발(공)과 너무 가깝습니다. 디딤발을 공 옆 약 20~30 cm에 두면 차는 다리가 지나갈 공간이 생깁니다.",
+      "high_msg": "디딤발이 공에서 너무 멉니다. 몸이 공에서 멀어지면 다리를 뻗어 차게 되어 힘이 덜 실립니다.",
+      "weight": 2,
+      "concept": "선운동역학: 디딤발 위치·지면반력",
+      "is_example": true,
+      "note": "공은 검출하지 않으므로 임팩트 순간 차는 발 위치를 공 위치로 근사한다."
+    },
+    {
+      "id": "balance_arm",
+      "phase": "임팩트",
+      "metric": "opposite_arm_abduction",
+      "unit": "°",
+      "good_range": [20, 110],
+      "tol": 15,
+      "low_msg": "디딤발 쪽 팔을 옆으로 더 벌리세요. 팔을 벌리면 몸의 관성모멘트가 커져 회전이 안정되고 균형을 잡기 쉽습니다.",
+      "high_msg": "팔을 너무 높이 들었습니다. 어깨가 들리면 상체가 흔들릴 수 있습니다.",
+      "weight": 1,
+      "concept": "각운동역학: 관성모멘트·균형",
+      "is_example": true
+    }
+  ]
+}

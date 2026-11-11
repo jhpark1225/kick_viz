@@ -1,0 +1,145 @@
+{
+  "id": "inside",
+  "name_ko": "인사이드 킥",
+  "name_en": "Side-foot / Inside",
+  "excel_name": "인사이드 킥",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "ground",
+  "impact": {
+    "time": 0.41,
+    "contact_point": "inside",
+    "contact_height": 0.11,
+    "ball_foot_speed_ratio": 1.1,
+    "launch_angle_deg": 5,
+    "foot_yaw_deg": 80,
+    "aim_deg": 0,
+    "contact_offset_m": {"side": 0.0, "up": 0.005}
+  },
+  "rotation_notes": [
+    "고관절 외회전 약 45°로 발 안쪽 면을 공에 정렬",
+    "넓은 접촉면 → 방향 제어 유리"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -5,
+      "r_knee": 40,
+      "r_ankle": 10,
+      "l_hip": 25,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 15,
+      "l_shoulder": -15,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "공을 향해 거의 정면으로 짧게 접근한다."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.18,
+      "trunk": 0,
+      "r_hip": -15,
+      "r_knee": 50,
+      "r_ankle": 10,
+      "l_hip": 20,
+      "l_knee": 20,
+      "l_ankle": -3,
+      "r_shoulder": -5,
+      "l_shoulder": 30,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발을 공 옆에 딛고 무릎을 살짝 굽혀 몸을 안정시킨다 (지면반력)."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.28,
+      "trunk": -3,
+      "r_hip": -20,
+      "r_knee": 70,
+      "r_ankle": 10,
+      "l_hip": 15,
+      "l_knee": 25,
+      "l_ankle": -10,
+      "r_shoulder": -15,
+      "l_shoulder": 45,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "백스윙이 작다(무릎 최대 약 70°). 속도보다 정확도를 위해 동작을 짧게 한다."
+    },
+    {
+      "phase": "가속",
+      "t": 0.36,
+      "trunk": -3,
+      "r_hip": 10,
+      "r_knee": 65,
+      "r_ankle": 10,
+      "l_hip": 12,
+      "l_knee": 28,
+      "l_ankle": -16,
+      "r_shoulder": -10,
+      "l_shoulder": 40,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.07,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "고관절이 외회전된 채 다리가 앞으로 나온다. 발목은 배측굴곡 쪽으로 고정한다 (안정근)."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.41,
+      "trunk": -5,
+      "r_hip": 25,
+      "r_knee": 45,
+      "r_ankle": 10,
+      "l_hip": 10,
+      "l_knee": 25,
+      "l_ankle": -13,
+      "r_shoulder": 0,
+      "l_shoulder": 35,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.083,
+      "highlight": [
+        "r_knee",
+        "r_ankle"
+      ],
+      "note": "무릎을 굽힌 채(약 45°) 발 안쪽 넓은 면으로 공 중심을 정면 타격한다."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.56,
+      "trunk": -8,
+      "r_hip": 50,
+      "r_knee": 25,
+      "r_ankle": 10,
+      "l_hip": 5,
+      "l_knee": 20,
+      "l_ankle": -10,
+      "r_shoulder": 15,
+      "l_shoulder": 20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "목표 방향으로 짧게 밀어 준다. 반복 외회전·내전 부하는 서혜부 부상과 관련 (부상 위험)."
+    }
+  ]
+}

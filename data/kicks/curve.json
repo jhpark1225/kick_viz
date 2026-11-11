@@ -1,0 +1,147 @@
+{
+  "id": "curve",
+  "name_ko": "감아차기",
+  "name_en": "Curve / Bending",
+  "excel_name": "감아차기",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "ground",
+  "impact": {
+    "time": 0.43,
+    "contact_point": "inside",
+    "contact_height": 0.11,
+    "ball_foot_speed_ratio": 1.15,
+    "launch_angle_deg": 15,
+    "foot_yaw_deg": 35,
+    "aim_deg": -8,
+    "contact_offset_m": {"side": 0.02, "up": -0.005}
+  },
+  "rotation_notes": [
+    "사선 접근각이 크다",
+    "공 중심 밖(옆)을 타격 → 스핀",
+    "팔로스루가 몸 앞을 가로지름"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -10,
+      "r_knee": 45,
+      "r_ankle": 30,
+      "l_hip": 30,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 20,
+      "l_shoulder": -25,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "인스텝보다 더 큰 사선으로 접근한다."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.2,
+      "trunk": -3,
+      "r_hip": -25,
+      "r_knee": 60,
+      "r_ankle": 30,
+      "l_hip": 25,
+      "l_knee": 20,
+      "l_ankle": 5,
+      "r_shoulder": -10,
+      "l_shoulder": 45,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발을 공 옆 약간 뒤에 두어 몸통이 뒤로 젖혀질 공간을 만든다."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.3,
+      "trunk": -8,
+      "r_hip": -30,
+      "r_knee": 105,
+      "r_ankle": 35,
+      "l_hip": 20,
+      "l_knee": 25,
+      "l_ankle": 0,
+      "r_shoulder": -30,
+      "l_shoulder": 75,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_hip",
+        "r_knee"
+      ],
+      "note": "인스텝과 비슷한 큰 백스윙. 몸통을 조금 더 뒤로 젖힌다."
+    },
+    {
+      "phase": "가속",
+      "t": 0.38,
+      "trunk": -10,
+      "r_hip": 10,
+      "r_knee": 95,
+      "r_ankle": 35,
+      "l_hip": 15,
+      "l_knee": 30,
+      "l_ankle": -8,
+      "r_shoulder": -20,
+      "l_shoulder": 65,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.08,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "허벅지가 먼저 회전하고 정강이가 뒤따른다 (근위→원위 순차)."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.43,
+      "trunk": -15,
+      "r_hip": 20,
+      "r_knee": 50,
+      "r_ankle": 35,
+      "l_hip": 10,
+      "l_knee": 25,
+      "l_ankle": -3,
+      "r_shoulder": 0,
+      "l_shoulder": 55,
+      "r_elbow": 50,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.091,
+      "highlight": [
+        "r_knee",
+        "r_ankle"
+      ],
+      "note": "발 안쪽~인스텝 안쪽으로 공 중심 바깥을 비스듬히 스친다 → 편심 충격으로 스핀 (각운동역학)."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.6,
+      "trunk": -20,
+      "r_hip": 60,
+      "r_knee": 25,
+      "r_ankle": 35,
+      "l_hip": 5,
+      "l_knee": 20,
+      "l_ankle": 2,
+      "r_shoulder": 35,
+      "l_shoulder": 15,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "다리가 몸 앞을 가로질러 지나간다(측면 그림에서는 앞으로 올라가는 모습)."
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "id": "toe",
+  "name_ko": "토 킥",
+  "name_en": "Toe poke",
+  "excel_name": "토 킥",
+  "is_example_values": true,
+  "airborne": false,
+  "stance_pin": "L",
+  "ball_start": "ground",
+  "impact": {
+    "time": 0.22,
+    "contact_point": "toe",
+    "contact_height": 0.11,
+    "ball_foot_speed_ratio": 1.1,
+    "launch_angle_deg": 8,
+    "foot_yaw_deg": 0,
+    "aim_deg": 0,
+    "contact_offset_m": {"side": 0.0, "up": 0.0}
+  },
+  "rotation_notes": [
+    "작은 접촉면 → 방향 오차가 큼"
+  ],
+  "keyframes": [
+    {
+      "phase": "접근",
+      "t": 0.0,
+      "trunk": 5,
+      "r_hip": -8,
+      "r_knee": 45,
+      "r_ankle": 10,
+      "l_hip": 28,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 15,
+      "l_shoulder": -15,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
+      "highlight": [],
+      "note": "준비 동작 없이 바로 찬다."
+    },
+    {
+      "phase": "디딤",
+      "t": 0.08,
+      "trunk": 0,
+      "r_hip": -15,
+      "r_knee": 55,
+      "r_ankle": 5,
+      "l_hip": 22,
+      "l_knee": 20,
+      "l_ankle": -1,
+      "r_shoulder": -5,
+      "l_shoulder": 30,
+      "r_elbow": 40,
+      "l_elbow": 30,
+      "kick_hip_lift": 0.03,
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤이 짧고 빠르다."
+    },
+    {
+      "phase": "백스윙",
+      "t": 0.14,
+      "trunk": -3,
+      "r_hip": -18,
+      "r_knee": 80,
+      "r_ankle": 0,
+      "l_hip": 18,
+      "l_knee": 24,
+      "l_ankle": -6,
+      "r_shoulder": -15,
+      "l_shoulder": 45,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.05,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "백스윙이 매우 짧다 → 수비가 반응하기 전에 슈팅 (동작 시간)."
+    },
+    {
+      "phase": "가속",
+      "t": 0.19,
+      "trunk": -5,
+      "r_hip": 10,
+      "r_knee": 70,
+      "r_ankle": 0,
+      "l_hip": 14,
+      "l_knee": 26,
+      "l_ankle": -10,
+      "r_shoulder": -10,
+      "l_shoulder": 40,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.07,
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "발목을 직각(0°)으로 세워 발끝이 앞을 향한다."
+    },
+    {
+      "phase": "임팩트",
+      "t": 0.22,
+      "trunk": -6,
+      "r_hip": 20,
+      "r_knee": 45,
+      "r_ankle": 0,
+      "l_hip": 12,
+      "l_knee": 25,
+      "l_ankle": -10,
+      "r_shoulder": 0,
+      "l_shoulder": 35,
+      "r_elbow": 45,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.129,
+      "highlight": [
+        "r_ankle"
+      ],
+      "note": "발끝(작은 접촉면)으로 찌르듯 찬다 → 충격 방향 오차가 커 정확도가 낮다 (선운동역학)."
+    },
+    {
+      "phase": "팔로스루",
+      "t": 0.3,
+      "trunk": -8,
+      "r_hip": 40,
+      "r_knee": 25,
+      "r_ankle": 5,
+      "l_hip": 8,
+      "l_knee": 22,
+      "l_ankle": -9,
+      "r_shoulder": 15,
+      "l_shoulder": 25,
+      "r_elbow": 40,
+      "l_elbow": 35,
+      "kick_hip_lift": 0.05,
+      "highlight": [],
+      "note": "짧게 끝난다. 발가락 관절 충격 부하 주의 (부상 위험)."
+    }
+  ]
+}
