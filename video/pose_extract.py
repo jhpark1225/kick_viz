@@ -3,6 +3,7 @@
 영상은 임시 파일로만 처리하고 분석 직후 삭제한다. 디스크에 영구 저장하거나 앱 서버 밖으로 전송하지 않는다.
 """
 
+import logging
 import os
 import tempfile
 from collections.abc import Callable
@@ -26,10 +27,46 @@ MAX_BYTES = 200 * 1024 * 1024
 MAX_SECONDS = 30.0
 INFER_MAX_WIDTH = 1280      # 추론용 축소 폭 (랜드마크는 정규화 좌표라 원본 해상도로 복원)
 THUMB_WIDTH = 360           # 이벤트 썸네일 폭 (메모리에만 JPEG로 보관)
+logger = logging.getLogger(__name__)
 
 
 class VideoError(ValueError):
-    """사용자에게 보여줄 영상 입력 오류."""
+    """사용자에게 보여줄 영상 입력 또는 분석 환경 오류."""
+
+
+class PoseRuntimeError(VideoError):
+    """분석 엔진의 설치·초기화 오류. 기존 UI의 VideoError 처리와 호환된다."""
+
+
+def _runtime_error(exc: Exception, component: str) -> PoseRuntimeError:
+    # 상세 경로·원본 traceback은 관리자 로그에만 남긴다.
+    logger.error("%s initialization failed", component,
+                 exc_info=(type(exc), exc, exc.__traceback__))
+    missing = {
+        "libEGL.so.1": "libegl1",
+        "libGLESv2.so.2": "libgles2",
+        "libGL.so.1": "libgl1",
+        "libglib-2.0.so.0": "libglib2.0-0",
+        "libgthread-2.0.so.0": "libglib2.0-0",
+    }
+    detail = ""
+    if "cannot open shared object file" in str(exc):
+        for library, package in missing.items():
+            if library in str(exc):
+                detail = f" 필요한 서버 라이브러리 {library}({package})를 불러오지 못했습니다."
+                break
+    return PoseRuntimeError(
+        f"서버의 영상 분석 엔진({component})을 시작하지 못했습니다.{detail} "
+        "앱 관리자는 Manage app 로그를 확인하고 저장소 최상위의 packages.txt 및 "
+        "requirements.txt를 반영한 뒤 앱을 다시 배포해 주세요.")
+
+
+def _load_cv2():
+    try:
+        import cv2
+    except (ImportError, OSError) as exc:
+        raise _runtime_error(exc, "OpenCV") from exc
+    return cv2
 
 
 def find_model() -> Path | None:
@@ -74,7 +111,7 @@ class TempVideo:
 
 def video_info(path: str) -> dict:
     """영상 메타데이터: fps, 프레임 수, 크기, 길이(s)."""
-    import cv2
+    cv2 = _load_cv2()
     cap = cv2.VideoCapture(path)
     try:
         if not cap.isOpened():
@@ -97,17 +134,28 @@ def info_from_bytes(data: bytes, suffix: str) -> dict:
 def extract_pose(path: str, model_path: Path, progress: Callable[[float], None] | None = None,
                  thumb_width: int = THUMB_WIDTH) -> tuple[PoseSeries, list[bytes]]:
     """영상 → 33개 중 사용할 17개 랜드마크(픽셀 좌표·visibility) + 프레임별 JPEG 썸네일."""
-    import cv2
-    import mediapipe as mp
-    from mediapipe.tasks.python import BaseOptions, vision
+    cv2 = _load_cv2()
+    try:
+        import mediapipe as mp
+        from mediapipe.tasks.python import BaseOptions, vision
+    except (ImportError, OSError) as exc:
+        raise _runtime_error(exc, "MediaPipe") from exc
 
     info = video_info(path)
     if info["duration"] > MAX_SECONDS + 0.5:
         raise VideoError(f"영상 길이가 {info['duration']:.1f} s입니다. {MAX_SECONDS:.0f} s 이하로 잘라서 올려주세요.")
     W, Hh, fps = info["width"], info["height"], info["fps"]
     # 경로 대신 바이트로 넘긴다: MediaPipe(C++)는 Windows에서 한글이 든 경로를 열지 못한다
+    try:
+        model_bytes = Path(model_path).read_bytes()
+    except OSError as exc:
+        logger.exception("Could not read pose model")
+        raise PoseRuntimeError("서버의 포즈 모델 파일을 읽지 못했습니다. "
+                               "앱 관리자는 models 폴더와 파일 권한을 확인해 주세요.") from exc
     options = vision.PoseLandmarkerOptions(
-        base_options=BaseOptions(model_asset_buffer=Path(model_path).read_bytes()),
+        # CPU 사용을 명시해 GPU가 없는 Cloud에서도 같은 설정을 쓴다.
+        # CPU여도 libmediapipe.so의 EGL/GLES 동적 링크 의존성은 필요하다.
+        base_options=BaseOptions(model_asset_buffer=model_bytes, delegate=BaseOptions.Delegate.CPU),
         running_mode=vision.RunningMode.VIDEO, num_poses=1,
         min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5,
         min_tracking_confidence=0.5)
@@ -116,7 +164,11 @@ def extract_pose(path: str, model_path: Path, progress: Callable[[float], None] 
     thumbs: list[bytes] = []
     cap = cv2.VideoCapture(path)
     try:
-        with vision.PoseLandmarker.create_from_options(options) as landmarker:
+        try:
+            landmarker = vision.PoseLandmarker.create_from_options(options)
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            raise _runtime_error(exc, "MediaPipe PoseLandmarker") from exc
+        with landmarker:
             i, last_ts = 0, -1
             while True:
                 ok, frame = cap.read()
