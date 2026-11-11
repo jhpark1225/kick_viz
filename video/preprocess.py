@@ -21,7 +21,8 @@ LEG_RATIO = SEGMENT_RATIOS["thigh"] + SEGMENT_RATIOS["shank"]   # 0.491 H
 SCALE_EXCLUDE_S = 0.15      # 스케일 계산에서 제외할 킥 직전 구간 (s)
 
 LOW_FPS_MSG = ("킥 임팩트는 약 10 ms로 매우 짧아 60fps 미만에서는 각속도·임팩트 검출이 부정확합니다. "
-               "슬로모션 촬영을 권장합니다.")
+               "슬로모션(120/240fps)으로 찍었다면 사이드바 '실제 촬영 fps'에 그 값을 입력하세요. "
+               "일반 영상이면 슬로모션으로 다시 찍는 것을 권장합니다.")
 
 
 def swap_sides(d: dict[str, np.ndarray]) -> dict[str, np.ndarray]:

@@ -45,6 +45,7 @@ COMPARE_ANGLES = ["r_knee", "r_hip", "r_ankle", "l_knee", "trunk", "l_shoulder"]
 STATE = "video_analysis"          # 지금 보고 있는 분석 결과의 id
 ANALYSES = "video_analyses"       # id → 분석 결과 (여러 영상)
 MAX_FILES = 4                     # 무료 서버 메모리(약 1 GB)를 생각해 한 번에 올리는 영상 수 제한
+SLOWMO_HINT_SECONDS = 6.0         # 30 fps 메타데이터인데 이보다 길면 슬로모션일 가능성이 큼 (킥 1회 ≈ 1~2 s)
 
 
 def _fig_key(p, ev, *extra) -> tuple:
@@ -65,6 +66,22 @@ def _rear_comparison(key: tuple, _p, _ev, _kick, highlight: tuple):
 
 def _kick_name(k: str) -> str:
     return load_kick(k)["name_ko"]
+
+
+def _capture_fps_input(up, info: dict) -> float:
+    """영상별 실제 촬영 fps 선택. 슬로모션은 재생 fps(30)로 저장되는 경우가 많아 메타데이터만 믿을 수 없다."""
+    meta = float(info["fps"])
+    options = {f"영상 그대로 ({meta:.0f} fps)": meta, "슬로모션 120fps로 찍음": 120.0, "슬로모션 240fps로 찍음": 240.0}
+    if meta >= LOW_FPS:                       # 이미 고속 프레임으로 저장된 영상
+        options = {f"영상 그대로 ({meta:.0f} fps)": meta}
+    else:
+        looks_slow = info["duration"] >= SLOWMO_HINT_SECONDS
+        st.info(("⏱️ 영상이 길어 **슬로모션 영상**으로 보입니다. " if looks_slow else "")
+                + f"메타데이터가 {meta:.0f} fps입니다. 스마트폰 슬로모션으로 찍었다면 실제 촬영 fps를 고르세요 "
+                  "(재생용 30 fps로 저장돼도 프레임은 그대로 들어 있습니다).")
+    label = st.radio(f"**{up.name}** 실제 촬영 fps", list(options), horizontal=True, key=f"capfps_{up.file_id}",
+                     help=FPS_HELP)
+    return options[label]
 
 
 def _input_section(default_height_cm: int, foot: str = "R") -> None:
@@ -104,7 +121,8 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
                 continue
             st.caption(f"**{up.name}** — {info['width']}×{info['height']}, 메타데이터 {info['fps']:.0f} fps, "
                        f"{info['frames']}프레임, {info['duration']:.1f} s")
-            ready.append((up, info))
+            fps = _capture_fps_input(up, info)
+            ready.append((up, {**info, "fps": fps}))
         if not ready:
             return
         if st.button(f"▶ 분석 시작 ({len(ready)}개)" if len(ready) > 1 else "▶ 분석 시작", type="primary"):
@@ -123,6 +141,7 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
                 bar.progress(1.0, text=f"[{n}/{len(ready)}] {up.name} — 추출 완료, 임시 영상 파일을 삭제했습니다.")
                 analyses[up.file_id] = {"id": up.file_id, "raw": raw, "thumbs": thumbs, "name": up.name,
                                         "height_cm": height_cm, "meta_fps": info["fps"], "demo": None}
+                st.session_state.pop(f"fps_{up.file_id}", None)   # 사이드바 fps를 새로 고른 값으로
                 first = first or up.file_id
             if first:
                 st.session_state[STATE] = first

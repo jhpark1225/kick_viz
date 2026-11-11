@@ -524,6 +524,7 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 | 2026-11-11 | **영상 여러 개 업로드**: 탭 5에서 한 번에 최대 4개(무료 서버 메모리 고려) 올려 각각 분석, "분석 결과 선택"으로 전환. 예시 데이터 결과도 목록에 쌓임, "분석 결과 모두 지우기" | `video_tab.py` | 446 통과 |
 | 2026-11-11 | **촬영 방향 자동 감지 개선**: 측면 인사이드 킥 영상이 후면으로 잘못 판정되던 문제. 어깨 간격 비율을 중앙값 → 하위 20% 값으로 판단, 화면에 판정 근거 숫자 표시 | `video/preprocess.py`, `video_tab.py`, `tests/test_rear.py` | 447 통과 |
 | 2026-11-11 | **킥 템플릿을 선행연구 기반으로 교체 + 숙련자 영상 → 템플릿 도구**: 8개 킥 키프레임을 인스텝 실측 단계 구조로 재작성(5.1·5.2), JSON에 `evidence`·`sources`, 탭 1 근거 문헌 표시. kick_hip_lift 자동 보정(`biomech/template_fit.py`). 측면 단계 정의 변경(백스윙 = 고관절 최대 신전, 가속 = 무릎 최대 굴곡), 후면 임팩트 = 하강 속도 최고점 이후 최저점. 영상 → 템플릿(`video/template_from_video.py`, `scripts/template_from_video.py`, 탭 5 "🧪"), 여러 영상 평균. 피드백 기준 재생성 | `data/kicks/*.json`, `biomech/template_fit.py`, `video/template_from_video.py`, `scripts/template_from_video.py`, `video/events.py`, `video/classify.py`, `scripts/build_feedback_rules.py`, `app.py`, `video_tab.py` | 460 통과 |
+| 2026-11-11 | **슬로모션 fps 업로드 단계에서 선택**: 메타데이터 < 60 fps 영상마다 "영상 그대로 / 슬로모션 120 / 240fps" 선택(30 fps인데 6 s 이상이면 슬로모션 안내), 선택값이 사이드바 '실제 촬영 fps' 기본값. 저 fps 경고 문구에 해결 방법 추가 | `video_tab.py`, `video/preprocess.py` | 460 통과 |
 
 **남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.
 숙련자 측면 영상(킥 종류별, 가능하면 120 fps 이상, 여러 번)으로 `scripts/template_from_video.py`를 돌려 추정 템플릿(인스텝 외 7개)을 실측으로 바꾼다.
