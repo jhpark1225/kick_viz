@@ -11,7 +11,8 @@ from video.feedback import (IMPROVE, SAFETY_NOTE, SIDE_VIEW_LIMITS, SIDE_VIEW_NO
                             format_range, format_value, load_rules, make_feedback, split_message)
 from video.pose_extract import (MAX_SECONDS, THUMB_WIDTH, VideoError, extract_from_bytes, find_model,
                                 info_from_bytes, model_help)
-from video.preprocess import CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, LOW_FPS, preprocess
+from video.preprocess import (CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, LOW_FPS, SIDE_VIEW_MAX_RATIO, preprocess,
+                              shoulder_ratio)
 from video.synthetic import synthesize
 from video.frontal import (REAR_LIMIT_NOTE, REAR_NOT_MEASURED, REAR_NOT_MEASURED_NOTE, compute_frontal_metrics,
                            rear_rules)
@@ -350,7 +351,7 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         cutoff = st.slider("저역통과 필터 차단 주파수 (Hz)", *CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, 0.5,
                            help="4차 Butterworth, 양방향(filtfilt). 생체역학 동작 데이터의 표준 처리입니다.")
         view_label = st.radio("촬영 방향", list(VIEW_OPTIONS), key=f"view_{sid}",
-                              help="자동 감지: 양 어깨가 벌어져 보이면 후면, 겹쳐 보이면 측면으로 판단합니다.")
+                              help="자동 감지: 영상에서 양 어깨가 겹쳐 보이는 순간이 있으면 측면, 내내 벌어져 보이면 후면으로 판단합니다.")
         if st.button("분석 결과 지우기" if len(ids) == 1 else f"분석 결과 모두 지우기 ({len(ids)}개)"):
             st.session_state.pop(STATE, None)
             st.session_state.pop(ANALYSES, None)
@@ -365,8 +366,11 @@ def render(default_height_cm: int, foot: str = "R") -> None:
     except ValueError as e:
         st.error(f"관절 좌표 전처리에 실패했습니다: {e}")
         return
+    ratio = shoulder_ratio(data["raw"])
     st.caption(f"촬영 방향: **{VIEW_NAMES[p.view]}**" + (" (자동 감지 — 틀렸다면 사이드바에서 바꾸세요)"
-                                                       if view_req == "auto" else ""))
+                                                       if view_req == "auto" else "")
+               + f" · 판정 근거: 어깨 간격 ÷ 몸통 길이 = {ratio:.2f} "
+                 f"({SIDE_VIEW_MAX_RATIO:.2f} 이하 측면, 초과 후면 · 어깨가 가장 겹쳐 보이는 하위 20% 순간 기준)")
 
     # 3) 품질 경고
     for level, msg in p.warnings:

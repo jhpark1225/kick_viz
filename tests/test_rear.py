@@ -35,6 +35,17 @@ def test_view_detection(kick_id):
     assert detect_view(synthesize(kick, H, FPS, view="rear")) == "rear"
 
 
+def test_side_view_with_opening_trunk():
+    """측면 영상에서 접근 이후(영상의 70%) 몸통이 열려 어깨가 벌어져 보여도 측면으로 판단."""
+    raw = synthesize(load_kick("inside"), H, FPS)
+    xy = raw.xy
+    torso = np.linalg.norm((xy["l_shoulder"] + xy["r_shoulder"]) / 2 - (xy["l_hip"] + xy["r_hip"]) / 2, axis=1)
+    mid = slice(int(0.3 * raw.n), raw.n)                # 접근 이후 70% 구간
+    xy["l_shoulder"][mid, 0] += 0.3 * torso[mid]        # 어깨 간격 ÷ 몸통 = 0.6 (후면 수준)
+    xy["r_shoulder"][mid, 0] -= 0.3 * torso[mid]
+    assert detect_view(raw) == "side"
+
+
 @pytest.mark.parametrize("kick_id", GROUND_KICKS)
 def test_rear_normalization_invariant(kick_id):
     """후면: 왼발 킥·좌우 반전(정면 촬영처럼)이어도 같은 관상면 각도."""

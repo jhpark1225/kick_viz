@@ -13,7 +13,8 @@ DEFAULT_CUTOFF_HZ = 8.0     # 4차 Butterworth 저역통과 차단 주파수 (�
 CUTOFF_RANGE_HZ = (6.0, 12.0)
 FILTER_ORDER = 4
 LOW_FPS = 60.0
-SIDE_VIEW_MAX_RATIO = 0.35  # (양 어깨 x 간격 ÷ 몸통 길이) 중앙값 상한 — 넘으면 후면·정면 촬영
+SIDE_VIEW_MAX_RATIO = 0.35  # (양 어깨 x 간격 ÷ 몸통 길이) 하위 20% 값 상한 — 넘으면 후면·정면 촬영
+VIEW_QUANTILE = 0.2         # 측면 영상도 킥 순간엔 몸이 열려 어깨가 벌어지므로, 겹쳐 보이는 순간(하위 20%)으로 판단
 REAR_VIEW_MIN_RATIO = 0.45  # 후면 분석일 때 이보다 작으면 사선·측면 촬영 경고
 OFFSCREEN_MAX_FRAC = 0.20
 LEG_RATIO = SEGMENT_RATIOS["thigh"] + SEGMENT_RATIOS["shank"]   # 0.491 H
@@ -118,7 +119,12 @@ def ground_level(xy: dict[str, np.ndarray]) -> float:
 
 
 def shoulder_ratio(raw: PoseSeries) -> float:
-    """(양 어깨 x 간격 ÷ 몸통 길이)의 중앙값. 측면이면 작고, 후면·정면이면 크다."""
+    """(양 어깨 x 간격 ÷ 몸통 길이)의 하위 20% 값. 측면이면 작고, 후면·정면이면 크다.
+
+    인사이드 킥처럼 골반·몸통이 열리는 킥은 측면에서 찍어도 백스윙~팔로스루 동안 어깨가 벌어져 보여
+    중앙값이 후면처럼 커진다. 측면 영상은 접근하며 뛰는 동안 어깨가 겹치는 순간이 있고,
+    후면 영상은 내내 벌어져 보이므로 하위 분위수로 구분한다.
+    """
     xy = raw.xy
     ok = np.all(np.isfinite(xy["l_shoulder"]) & np.isfinite(xy["r_shoulder"]), axis=1)
     if ok.sum() == 0:
@@ -126,7 +132,7 @@ def shoulder_ratio(raw: PoseSeries) -> float:
     gap = np.abs(xy["l_shoulder"][ok, 0] - xy["r_shoulder"][ok, 0])
     torso = np.linalg.norm((xy["l_shoulder"][ok] + xy["r_shoulder"][ok]) / 2
                            - (xy["l_hip"][ok] + xy["r_hip"][ok]) / 2, axis=1)
-    return float(np.median(gap / np.maximum(torso, 1e-9)))
+    return float(np.quantile(gap / np.maximum(torso, 1e-9), VIEW_QUANTILE))
 
 
 def detect_view(raw: PoseSeries) -> str:
