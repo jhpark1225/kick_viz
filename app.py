@@ -165,7 +165,12 @@ def lr(text: str) -> str:
 
 KICK_SIDE, STANCE_SIDE = ("왼쪽", "오른쪽") if LEFT else ("오른쪽", "왼쪽")
 if kick["is_example_values"]:
-    st.caption("※ 각도는 교육용 근사값입니다")
+    st.caption("※ 각도는 교육용 근사값입니다" + (f" · 근거: {kick['evidence']}" if kick.get("evidence") else ""))
+if kick.get("sources"):
+    with st.expander("📑 이 킥 동작의 근거 문헌"):
+        st.markdown("\n".join(f"- {s}" for s in kick["sources"]))
+        st.caption("측면 2D 모델에 맞추기 위해 차는 쪽 엉덩이 들림(kick_hip_lift)은 공 접촉 높이·발 지면 통과 조건으로 "
+                   "자동 보정했습니다. 숙련자 영상으로 템플릿을 만들면 이 값이 실측 기반으로 바뀝니다 (탭 5).")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["🦵 동작 애니메이션", "📈 관절 각도 그래프", "⚽ 공의 궤적",
                                         "📚 생체역학 설명", "🎥 내 킥 분석"])

@@ -92,20 +92,23 @@ def detect_impact(p: Processed) -> int | None:
 
 
 def detect_impact_rear(p: Processed) -> int | None:
-    """후면 임팩트: 발 속도 최고점 ±0.1 s 안에서 차는 발이 가장 낮은 프레임.
+    """후면 임팩트: 발이 아래로 내려오는 속도가 가장 빠른 순간부터 0.1 s 안에서 차는 발이 가장 낮은 프레임.
 
     뒤에서 보면 발이 앞뒤로 움직이는 것은 화면에 거의 안 보이고, 다리가 진자처럼 내려와
-    스윙 아크의 가장 낮은 점(지면의 공 높이)에서 공을 맞힌다.
+    스윙 아크의 가장 낮은 점(지면의 공 높이)에서 공을 맞힌다. 전체 속도 최고점을 쓰면
+    팔로스루에서 다리를 높이 차올리는 선수는 임팩트 뒤의 상승 구간이 잡힌다.
     """
-    s8 = speed(kick_foot_point(p.xy), p.fps)
-    ip = int(np.argmax(s8))
-    w = int(round(REAR_IMPACT_WINDOW * p.fps))
-    a, b = max(ip - w, 0), min(ip + w + 1, p.n)
-    return a + int(np.argmin(kick_foot_point(p.xy)[a:b, 1]))
+    y = kick_foot_point(p.xy)[:, 1]
+    ip = int(np.argmax(-np.gradient(y)))           # 하강 속도 최고점 (다운스윙)
+    b = min(ip + int(round(REAR_IMPACT_WINDOW * p.fps)) + 1, p.n)
+    return ip + int(np.argmin(y[ip:b]))
 
 
 def detect_plant(p: Processed, impact: int) -> int | None:
-    """디딤: 임팩트 이전에 디딤발 발목 속도가 0.3 m/s 아래로 떨어져 임팩트까지 유지되기 시작한 프레임."""
+    """디딤: 임팩트 이전에 디딤발 발목 속도가 0.3 m/s 아래로 떨어져 임팩트까지 유지되기 시작한 프레임.
+
+    8 Hz 필터가 디딤 순간의 급정지를 부드럽게 만들어 실제보다 약 30 ms 늦게 잡힌다 (알려진 한계).
+    """
     s = speed(p.xy["l_ankle"], p.fps)[:impact + 1]
     if len(s) < 2 or s[-1] >= PLANT_SPEED:
         return None
@@ -160,11 +163,11 @@ def detect_events(p: Processed, overrides: dict[str, int] | None = None) -> Even
             pick("가속", lambda: bs + int(np.argmax(s[bs:imp + 1])) if bs is not None and imp > bs else None)
             pick("팔로스루", lambda: imp + int(np.argmax(foot[imp:end + 1, 1])) if imp < n - 1 else None)
         else:
-            knee = p.angles["r_knee"]
-            bs = pick("백스윙", lambda: start + int(np.argmax(knee[start:imp + 1])) if imp > start else None)
-            w = thigh_angular_velocity(p)
-            pick("가속", lambda: bs + int(np.argmax(w[bs:imp + 1])) if bs is not None and imp > bs else None)
-            hip = p.angles["r_hip"]
+            # 선행연구(Langhout et al., 2015)의 단계 정의: 백스윙 끝 = 고관절 최대 신전,
+            # 가속 시작 = 무릎 최대 굴곡 (이때 허벅지 각속도도 최고점 근처, Kellis & Katis 2007)
+            hip, knee = p.angles["r_hip"], p.angles["r_knee"]
+            bs = pick("백스윙", lambda: start + int(np.argmin(hip[start:imp + 1])) if imp > start else None)
+            pick("가속", lambda: bs + int(np.argmax(knee[bs:imp + 1])) if bs is not None and imp > bs else None)
             pick("팔로스루", lambda: imp + int(np.argmax(hip[imp:])) if imp < n - 1 else None)
         pick("접근", lambda: max(plant - int(round(APPROACH_BEFORE_PLANT * fps)), 0)
              if plant is not None else 0)

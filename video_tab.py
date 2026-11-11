@@ -1,5 +1,7 @@
 """탭 5 — 🎥 내 킥 분석: 영상 업로드 → 킥 자동 분류 → 수정점 피드백 → 비교 시각화."""
 
+import json
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -14,6 +16,7 @@ from video.pose_extract import (MAX_SECONDS, THUMB_WIDTH, VideoError, extract_fr
 from video.preprocess import (CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, LOW_FPS, SIDE_VIEW_MAX_RATIO, preprocess,
                               shoulder_ratio)
 from video.synthetic import synthesize
+from video.template_from_video import build_template, keyframes_from_video, problems
 from video.frontal import (REAR_LIMIT_NOTE, REAR_NOT_MEASURED, REAR_NOT_MEASURED_NOTE, compute_frontal_metrics,
                            rear_rules)
 from viz.compare import (REAR_ANGLE_NAMES, angle_compare_chart, angle_label, comparison_figure, overlay_skeleton,
@@ -408,6 +411,7 @@ def render(default_height_cm: int, foot: str = "R") -> None:
 
         st.markdown("### ④ 내 동작 vs 기준 동작")
         _visual_section(p, ev, kick_id, data)
+        _template_section(p, ev, kick_id, data)
 
     st.markdown("### ⑤ 결과 다운로드")
     t0 = p.t[ev.impact]
@@ -419,6 +423,39 @@ def render(default_height_cm: int, foot: str = "R") -> None:
                       file_name="kick_feedback.csv", mime="text/csv")
     b.download_button("각도 시계열 (CSV)", series.to_csv(index=False).encode("utf-8-sig"),
                       file_name="kick_angles.csv", mime="text/csv")
+
+
+def _template_section(p, ev, kick_id: str, data: dict) -> None:
+    """숙련자 영상이면 이 분석 결과로 기준 템플릿(키프레임 JSON)을 만든다."""
+    with st.expander("🧪 숙련자 영상이라면: 이 영상으로 기준 템플릿 만들기"):
+        st.caption("축구부·코치 등 숙련자의 측면 슬로모션 영상으로 만든 템플릿은 교육용 근사값보다 실제 동작에 가깝습니다. "
+                   "단계 검출 결과(①)가 맞는지 먼저 확인하세요. 측면 2D 모델에 맞추기 위해 디딤발 발목(발바닥 평평)과 "
+                   "차는 쪽 엉덩이 들림(kick_hip_lift)만 자동 보정합니다.")
+        try:
+            kfs = keyframes_from_video(p, ev)
+            src = f"{data['name']} (키 {data['height_cm']} cm, {p.fps:.0f} fps)"
+            kick, check = build_template(kfs, load_kick(kick_id), src)
+        except ValueError as e:
+            st.warning(str(e))
+            return
+        old = {kf["phase"]: kf for kf in load_kick(kick_id)["keyframes"]}
+        st.dataframe(pd.DataFrame([{
+            "단계": kf["phase"], "t (s)": kf["t"], "몸통 (°)": kf["trunk"], "고관절 (°)": kf["r_hip"],
+            "무릎 (°)": kf["r_knee"], "발목 (°)": kf["r_ankle"], "디딤 무릎 (°)": kf["l_knee"],
+            "기존 고관절/무릎/발목": f"{old[kf['phase']]['r_hip']} / {old[kf['phase']]['r_knee']} / "
+                                f"{old[kf['phase']]['r_ankle']}"} for kf in kick["keyframes"]]),
+            hide_index=True, width="stretch")
+        issues = problems(kick, check)
+        for s in issues:
+            st.warning(s)
+        if not issues:
+            st.success(f"모델 조건 통과 · 정강이 최고 각속도 {check['shank_peak']:.0f}°/s")
+        st.download_button(f"{_kick_name(kick_id)} 템플릿 JSON 내려받기",
+                           json.dumps(kick, ensure_ascii=False, indent=2).encode("utf-8"),
+                           file_name=f"{kick_id}.json", mime="application/json")
+        st.caption(f"내려받은 파일을 `data/kicks/{kick_id}.json`에 넣고 `scripts/build_feedback_rules.py`를 실행하면 "
+                   "애니메이션·피드백 기준이 이 선수 동작으로 바뀝니다. 같은 킥 영상 여러 개를 평균하려면 "
+                   "`scripts/template_from_video.py`를 쓰세요.")
 
 
 def _phase_of(ev, i: int) -> str:

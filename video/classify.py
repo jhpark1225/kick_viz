@@ -115,18 +115,18 @@ def gate(p: Processed, ev: Events) -> tuple[str, list[str], list[str]]:
     i = ev.impact
     trunk = float(p.angles["trunk"][i])
     h = float(ev.contact_height)
-    bs = ev.frames.get("백스윙")
+    mkf = ev.frames.get("가속")          # 무릎 최대 굴곡 프레임
     if h > 0.30:
         return "공중 공", ["volley"], [f"임팩트 접촉 높이 {h:.2f} m → 공중의 공을 차는 발리 킥"]
     if 0.13 <= h <= 0.30 and trunk > 0:
         return "바운드 공", ["half_volley", *INSTEP_FAMILY], [
             f"접촉 높이 {h:.2f} m, 임팩트 시 몸통 +{trunk:.0f}° (앞으로 숙여 공을 덮음) → 하프 발리 또는 인스텝 계열"]
-    if bs is not None:
-        knee_max = float(p.angles["r_knee"][bs])
-        dt = (i - bs) / p.fps
+    if mkf is not None:
+        knee_max = float(p.angles["r_knee"][mkf])
+        dt = (i - mkf) / p.fps
         if knee_max < 60 and dt < 0.08:
             return "짧은 백스윙", ["toe", "inside", "chip"], [
-                f"백스윙 무릎 최대 굴곡 {knee_max:.0f}°, 백스윙→임팩트 {dt * 1000:.0f} ms → 짧고 빠른 킥"]
+                f"무릎 최대 굴곡 {knee_max:.0f}°, 무릎 최대 굴곡→임팩트 {dt * 1000:.0f} ms → 짧고 빠른 킥"]
     return "지면 킥", list(GROUND_KICKS), [f"임팩트 접촉 높이 {h:.2f} m → 지면에 있는 공"]
 
 
@@ -138,10 +138,10 @@ def detail_evidence(p: Processed, ev: Events) -> list[str]:
         out.append(f"임팩트 시 발목 저측굴곡 {ankle:.0f}° → 발등으로 차는 인스텝 계열")
     elif ankle <= 20:
         out.append(f"임팩트 시 발목 저측굴곡 {ankle:.0f}° (발을 세워 고정) → 인사이드·토 킥·로빙 쪽")
-    bs = ev.frames.get("백스윙")
-    if bs is not None:
-        knee = float(p.angles["r_knee"][bs])
-        out.append(f"백스윙 무릎 최대 굴곡 {knee:.0f}° → " + ("큰 백스윙(강한 슈팅)" if knee >= 90 else "작은 백스윙"))
+    mkf = ev.frames.get("가속")
+    if mkf is not None:
+        knee = float(p.angles["r_knee"][mkf])
+        out.append(f"무릎 최대 굴곡 {knee:.0f}° → " + ("큰 백스윙(강한 슈팅)" if knee >= 90 else "작은 백스윙"))
     return out
 
 

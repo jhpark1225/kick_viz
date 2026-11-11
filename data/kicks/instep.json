@@ -7,73 +7,149 @@
   "airborne": false,
   "stance_pin": "L",
   "impact": {
-    "time": 0.43,
+    "time": 0.45,
     "contact_point": "instep",
     "contact_height": 0.11,
     "ball_foot_speed_ratio": 1.25,
     "launch_angle_deg": 10,
     "foot_yaw_deg": 10,
     "aim_deg": 0,
-    "contact_offset_m": {"side": 0.0, "up": -0.008}
+    "contact_offset_m": {
+      "side": 0.0,
+      "up": -0.008
+    }
   },
   "keyframes": [
     {
-      "t": 0.00, "phase": "접근",
-      "trunk": 5, "r_hip": -10, "r_knee": 45, "r_ankle": 30,
-      "l_hip": 30, "l_knee": 15, "l_ankle": 0,
-      "r_shoulder": 20, "l_shoulder": -20, "r_elbow": 40, "l_elbow": 40,
-      "kick_hip_lift": 0.00,
+      "t": 0.0,
+      "phase": "접근",
+      "trunk": 5,
+      "r_hip": -10,
+      "r_knee": 45,
+      "r_ankle": 30,
+      "l_hip": 30,
+      "l_knee": 15,
+      "l_ankle": 0,
+      "r_shoulder": 20,
+      "l_shoulder": -20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.0,
       "highlight": [],
       "note": "공을 향해 사선(약 30~45°)으로 접근. 마지막 보폭이 길어진다."
     },
     {
-      "t": 0.20, "phase": "디딤",
-      "trunk": 0, "r_hip": -25, "r_knee": 60, "r_ankle": 30,
-      "l_hip": 25, "l_knee": 20, "l_ankle": -5,
-      "r_shoulder": -10, "l_shoulder": 40, "r_elbow": 40, "l_elbow": 30,
+      "t": 0.2,
+      "phase": "디딤",
+      "trunk": 0,
+      "r_hip": -15,
+      "r_knee": 75,
+      "r_ankle": 25,
+      "l_hip": 25,
+      "l_knee": 26,
+      "l_ankle": -3,
+      "r_shoulder": -10,
+      "l_shoulder": 40,
+      "r_elbow": 40,
+      "l_elbow": 30,
       "kick_hip_lift": 0.03,
-      "highlight": ["l_knee"],
-      "note": "디딤발을 공 옆에 딛고 감속한다. 이때 지면반력이 발생한다 (선운동역학)."
+      "highlight": [
+        "l_knee"
+      ],
+      "note": "디딤발을 공 옆에 딛고 무릎을 약 26° 굽혀 충격을 흡수하며 감속한다. 이때 지면반력이 발생한다 (선운동역학)."
     },
     {
-      "t": 0.30, "phase": "백스윙",
-      "trunk": -5, "r_hip": -30, "r_knee": 105, "r_ankle": 40,
-      "l_hip": 20, "l_knee": 25, "l_ankle": -10,
-      "r_shoulder": -30, "l_shoulder": 70, "r_elbow": 50, "l_elbow": 20,
+      "t": 0.31,
+      "phase": "백스윙",
+      "trunk": -3,
+      "r_hip": -20,
+      "r_knee": 100,
+      "r_ankle": 30,
+      "l_hip": 22,
+      "l_knee": 35,
+      "l_ankle": -12,
+      "r_shoulder": -30,
+      "l_shoulder": 70,
+      "r_elbow": 50,
+      "l_elbow": 20,
       "kick_hip_lift": 0.05,
-      "highlight": ["r_hip", "r_knee"],
-      "note": "고관절 신전 + 무릎 최대 굴곡 → 대퇴사두근·장요근이 신장된다(신장-단축 주기, SSC). 무릎을 접어 다리의 관성모멘트를 줄인다 (각운동역학)."
+      "highlight": [
+        "r_hip"
+      ],
+      "note": "디딤 직후 고관절이 가장 뒤로 젖혀진다(최대 신전). 대퇴사두근·장요근이 늘어나 신장-단축 주기(SSC)를 준비한다. 무릎은 계속 접히는 중이다."
     },
     {
-      "t": 0.38, "phase": "가속",
-      "trunk": -5, "r_hip": 10, "r_knee": 95, "r_ankle": 45,
-      "l_hip": 15, "l_knee": 30, "l_ankle": -15,
-      "r_shoulder": -20, "l_shoulder": 60, "r_elbow": 50, "l_elbow": 20,
-      "kick_hip_lift": 0.08,
-      "highlight": ["r_hip"],
-      "note": "허벅지가 먼저 앞으로 회전한 뒤 감속하면서 정강이로 각운동량을 전달한다 (채찍 효과, 근위→원위 순차)."
+      "t": 0.38,
+      "phase": "가속",
+      "trunk": -5,
+      "r_hip": 10,
+      "r_knee": 115,
+      "r_ankle": 35,
+      "l_hip": 18,
+      "l_knee": 40,
+      "l_ankle": -19,
+      "r_shoulder": -20,
+      "l_shoulder": 60,
+      "r_elbow": 50,
+      "l_elbow": 20,
+      "kick_hip_lift": 0.127,
+      "highlight": [
+        "r_knee"
+      ],
+      "note": "무릎이 가장 많이 접힌 순간(약 115°). 이미 허벅지는 앞으로 빠르게 회전하고 있고, 접힌 다리 덕분에 관성모멘트가 작다 (각운동역학). 이후 허벅지가 감속하며 정강이로 각운동량을 넘긴다 (채찍 효과)."
     },
     {
-      "t": 0.43, "phase": "임팩트",
-      "trunk": -10, "r_hip": 20, "r_knee": 50, "r_ankle": 55,
-      "l_hip": 10, "l_knee": 25, "l_ankle": -15,
-      "r_shoulder": 0, "l_shoulder": 50, "r_elbow": 50, "l_elbow": 25,
-      "kick_hip_lift": 0.10,
-      "highlight": ["r_knee", "r_ankle"],
+      "t": 0.45,
+      "phase": "임팩트",
+      "trunk": -6,
+      "r_hip": 30,
+      "r_knee": 45,
+      "r_ankle": 30,
+      "l_hip": 12,
+      "l_knee": 42,
+      "l_ankle": -26,
+      "r_shoulder": 0,
+      "l_shoulder": 50,
+      "r_elbow": 50,
+      "l_elbow": 25,
+      "kick_hip_lift": 0.104,
+      "highlight": [
+        "r_knee",
+        "r_ankle"
+      ],
       "note": "무릎이 빠르게 신전되고, 발목은 저측굴곡으로 단단히 고정된다. 접촉시간은 약 10 ms."
     },
     {
-      "t": 0.60, "phase": "팔로스루",
-      "trunk": -15, "r_hip": 70, "r_knee": 15, "r_ankle": 40,
-      "l_hip": 5, "l_knee": 20, "l_ankle": -5,
-      "r_shoulder": 30, "l_shoulder": 20, "r_elbow": 40, "l_elbow": 40,
-      "kick_hip_lift": 0.05,
-      "highlight": ["r_hip"],
+      "t": 0.6,
+      "phase": "팔로스루",
+      "trunk": -10,
+      "r_hip": 90,
+      "r_knee": 25,
+      "r_ankle": 30,
+      "l_hip": 5,
+      "l_knee": 30,
+      "l_ankle": -17,
+      "r_shoulder": 30,
+      "l_shoulder": 20,
+      "r_elbow": 40,
+      "l_elbow": 40,
+      "kick_hip_lift": 0.104,
+      "highlight": [
+        "r_hip"
+      ],
       "note": "햄스트링의 편심성 수축으로 다리를 감속시켜 무릎을 보호한다 (부상 위험)."
     }
   ],
   "rotation_notes": [
     "골반이 차는 쪽으로 회전하며 접근 방향(사선)의 운동량을 공에 전달",
     "디딤발 발끝은 목표 방향을 향함"
+  ],
+  "evidence": "선행연구 실측값 기반",
+  "sources": [
+    "Langhout et al. (2015) — 숙련 선수 인스텝 킥 단계 타이밍 (디딤 0.20 s, 고관절 최대 신전 0.31 s, 무릎 최대 굴곡 0.38 s, 임팩트 0.45 s, 종료 0.60 s)",
+    "Navandar et al. (2018) — 프로 선수 단계별 고관절·무릎 각도 (고관절 최대 신전 −13°, 무릎 최대 굴곡 118°, 임팩트 무릎 43°)",
+    "Alcock et al. (2012) — 국가대표 여자 선수 임팩트 각도 (고관절 36°, 무릎 56°, 발목 저측굴곡 28°, 몸통 −6°) · 감아차기 비교",
+    "Lees et al. (2010) 리뷰 — 디딤 무릎 굴곡 (디딤 26°, 임팩트 42°)",
+    "Kellis & Katis (2007) 리뷰 — 허벅지 각속도 최고 516~573°/s, 정강이 최고 약 1890°/s, 고관절 신전 최대 29°"
   ]
 }
