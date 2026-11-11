@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from biomech.kick_loader import PHASES, available_kicks, load_kick
+from video.combined import BOTH_NOT_MEASURED, SEPARATE_KICKS_NOTE, auto_pairs, merge_feedback
 from video.classify import GROUP_NOTE, GROUPS, classify, template_processed
 from video.events import detect_events
 from video.feedback import (IMPROVE, SAFETY_NOTE, SIDE_VIEW_LIMITS, SIDE_VIEW_NOTE, UNSURE, compute_metrics,
@@ -14,7 +15,7 @@ from video.feedback import (IMPROVE, SAFETY_NOTE, SIDE_VIEW_LIMITS, SIDE_VIEW_NO
 from video.pose_extract import (MAX_SECONDS, THUMB_WIDTH, VideoError, extract_from_bytes, find_model,
                                 info_from_bytes, model_help)
 from video.preprocess import (CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, FOOT_REAR_MAX, FOOT_SIDE_MIN, LOW_FPS,
-                              SIDE_VIEW_MAX_RATIO, foot_ratio, preprocess, shoulder_ratio)
+                              SIDE_VIEW_MAX_RATIO, detect_view, foot_ratio, preprocess, shoulder_ratio)
 from video.synthetic import synthesize
 from video.template_from_video import build_template, keyframes_from_video, problems
 from video.frontal import (REAR_LIMIT_NOTE, REAR_NOT_MEASURED, REAR_NOT_MEASURED_NOTE, compute_frontal_metrics,
@@ -211,17 +212,19 @@ def _classification_section(p, ev, sid: str) -> str:
     c = classify(p, ev)
     col1, col2 = st.columns([1, 1.2])
     with col1:
-        st.markdown(f"**상위 3개 후보** · 규칙 게이트: {c.gate}")
+        st.markdown(f"**상위 3개 후보 (템플릿 유사도)** · 규칙 게이트: {c.gate}")
         for k, conf in c.top3:
             st.progress(float(conf), text=f"{_kick_name(k)} — {conf:.0%}")
+        st.caption("유사도 = 내장 애니메이션과 관절 각도 흐름이 얼마나 비슷한지입니다. 정답 확률이 아닙니다. "
+                   "실제 영상에서는 아직 정확도가 낮아(템플릿이 추정값, 측면에서 발 방향이 안 보임) 참고용입니다.")
     with col2:
         st.markdown("**판단 근거**")
         for e in c.evidence:
             st.markdown(f"- {e}")
     if c.group:
-        st.info(f"**{c.group}**로 보입니다 (상위 후보 신뢰도 차이 < 15%p). {GROUP_NOTE}")
+        st.info(f"**{c.group}**로 보입니다 (상위 후보 유사도 차이 < 15%p). {GROUP_NOTE}")
     elif c.uncertain:
-        st.warning("신뢰도가 낮아 하나의 킥으로 단정하지 않습니다. 아래에서 직접 선택하세요.")
+        st.warning("유사도가 낮아 하나의 킥으로 단정하지 않습니다. 아래에서 직접 선택하세요.")
     elif any(c.best in m for m in GROUPS.values()):
         st.caption(f"참고: {GROUP_NOTE}")
     kicks = available_kicks()
@@ -234,6 +237,8 @@ def _feedback_section(fb, view: str = "side") -> pd.DataFrame:
     """Top 3 카드 → 잘한 점 → 전체 표 → 이 촬영 방향으로 판단 불가 항목. 전체 표 DataFrame을 반환."""
     if view == "rear":
         st.caption("※ 기준값은 교육용 근사값입니다 (후면 공통 기준, `data/feedback_rules_rear.json`).")
+    elif view == "both":
+        st.caption("※ 기준값은 교육용 근사값입니다 (측면: 템플릿 ± 허용폭, 후면: 공통 기준).")
     else:
         st.caption("※ 기준값은 교육용 근사값입니다 (템플릿 ± 허용폭, 인스텝은 선행연구 범위 우선).")
     st.markdown("#### 🔧 우선 개선점 Top 3")
@@ -247,7 +252,8 @@ def _feedback_section(fb, view: str = "side") -> pd.DataFrame:
     for col, (i, j) in zip(cols, enumerate(fb.top3, 1)):
         what, why = split_message(j.message)
         with col.container(border=True):
-            st.markdown(f"**{i}. {j.name}**  \n<small>{j.rule['phase']}</small>", unsafe_allow_html=True)
+            where = f"{j.rule['view']} · " if "view" in j.rule else ""
+            st.markdown(f"**{i}. {j.name}**  \n<small>{where}{j.rule['phase']}</small>", unsafe_allow_html=True)
             a, b = st.columns(2)
             a.metric("내 값", format_value(j.value, j.unit))
             b.metric("기준 범위", format_range(j.rule))
@@ -258,15 +264,19 @@ def _feedback_section(fb, view: str = "side") -> pd.DataFrame:
     if fb.strengths:
         st.markdown("#### 👍 잘한 점")
         for j in fb.strengths:
-            st.success(f"**{j.name}**: {format_value(j.value, j.unit)} (기준 {format_range(j.rule)}) — {j.rule['concept']}")
+            st.success(f"**{j.name}**{' (' + j.rule['view'] + ')' if 'view' in j.rule else ''}: {format_value(j.value, j.unit)} (기준 {format_range(j.rule)}) — {j.rule['concept']}")
     st.markdown("#### 📋 전체 항목")
     table = pd.DataFrame([{
+        **({"영상": j.rule["view"]} if "view" in j.rule else {}),
         "단계": j.rule["phase"], "지표": j.name, "내 값": format_value(j.value, j.unit),
         "기준 범위": format_range(j.rule), "판정": j.status, "관련 개념": j.rule["concept"],
         "비고": j.reason if j.status == UNSURE else (j.message if j.status == IMPROVE else ""),
     } for j in fb.items])
     st.dataframe(table, hide_index=True, width="stretch")
-    if view == "rear":
+    if view == "both":
+        st.markdown("#### 📐 두 방향 모두로도 판단할 수 없는 항목")
+        st.info("\n".join(f"- {x}" for x in BOTH_NOT_MEASURED))
+    elif view == "rear":
         st.markdown("#### 📐 후면 영상으로 판단할 수 없는 항목")
         st.info("\n".join(f"- {x}" for x in REAR_NOT_MEASURED) + f"\n\n{REAR_NOT_MEASURED_NOTE}")
     else:
@@ -342,6 +352,73 @@ def _visual_section(p, ev, kick_id: str, data: dict) -> None:
                         key=f"ang_{k}")
 
 
+def _analysis_view(data: dict) -> str:
+    """분석 결과의 촬영 방향: 사이드바에서 직접 골랐으면 그 값, 아니면 자동 감지 (결과에 저장해 재사용)."""
+    chosen = VIEW_OPTIONS.get(st.session_state.get(f"view_{data['id']}", "자동 감지"), "auto")
+    if chosen != "auto":
+        return chosen
+    if "auto_view" not in data:
+        data["auto_view"] = detect_view(data["raw"])
+    return data["auto_view"]
+
+
+def _combined_section(analyses: dict, views: dict) -> None:
+    """측면 + 후면 함께: 짝 선택 → 킥 종류 하나 → 통합 피드백 → 측면·후면 비교 그림."""
+    sides = [i for i, v in views.items() if v == "side"]
+    rears = [i for i, v in views.items() if v == "rear"]
+    pairs = auto_pairs({i: (analyses[i]["name"], views[i]) for i in analyses})
+    name = lambda i: analyses[i]["name"]
+    c1, c2 = st.columns(2)
+    default_s, default_r = pairs[0] if pairs else (sides[0], rears[0])
+    si = c1.selectbox("측면 영상", sides, index=sides.index(default_s), format_func=name, key="pair_side")
+    paired = dict(pairs).get(si, default_r)
+    ri = c2.selectbox("후면 영상", rears, index=rears.index(paired) if paired in rears else 0, format_func=name,
+                      key=f"pair_rear_{si}")
+    if pairs and (si, ri) in pairs:
+        st.caption("파일 이름으로 짝을 찾았습니다.")
+    st.info(SEPARATE_KICKS_NOTE + " 단계 검출이 틀렸으면 '영상 하나씩' 보기에서 단계를 직접 지정한 뒤 돌아오세요.")
+
+    ds, dr = analyses[si], analyses[ri]
+    try:
+        ps = preprocess(ds["raw"], ds["height_cm"] / 100, ds["meta_fps"], DEFAULT_CUTOFF_HZ, view="side")
+        pr = preprocess(dr["raw"], dr["height_cm"] / 100, dr["meta_fps"], DEFAULT_CUTOFF_HZ, view="rear")
+    except ValueError as e:
+        st.error(f"관절 좌표 전처리에 실패했습니다: {e}")
+        return
+    evs = detect_events(ps, st.session_state.get(f"ev_override_{si}_side", {}))
+    evr = detect_events(pr, st.session_state.get(f"ev_override_{ri}_rear", {}))
+    for label, p, ev in (("측면", ps, evs), ("후면", pr, evr)):
+        for level, msg in p.warnings:
+            (st.warning if level == "warning" else st.info)(f"[{label}] {msg}")
+        if ev.impact is None:
+            st.error(f"{label} 영상에서 임팩트를 찾지 못했습니다. '영상 하나씩' 보기에서 임팩트 프레임을 지정하세요.")
+            return
+
+    st.markdown("### ① 킥 종류")
+    st.caption("킥 종류는 측면 영상으로 추천합니다. 후면 정보(발 방향 등)는 실제 영상에서 아직 안정적으로 측정되지 않아 "
+               "분류에는 쓰지 않고 피드백에만 씁니다.")
+    kick_id = _classification_section(ps, evs, f"combined_{si}")
+
+    st.markdown(f"### ② 통합 피드백 — {_kick_name(kick_id)} 기준 (측면 + 후면)")
+    fb = merge_feedback(make_feedback(kick_id, compute_metrics(ps, evs)),
+                        make_feedback(kick_id, compute_frontal_metrics(pr, evr), rear_rules(kick_id)))
+    table = _feedback_section(fb, "both")
+
+    st.markdown("### ③ 내 동작 vs 기준 동작")
+    t_side, t_rear = st.tabs(["측면 (옆에서)", "후면 (뒤에서)"])
+    kick = load_kick(kick_id)
+    with t_side:
+        st.plotly_chart(_comparison(_fig_key(ps, evs, kick_id, False), ps, evs, kick, False), width="stretch",
+                        config={"displayModeBar": False}, key="cmb_side")
+    with t_rear:
+        hl = ["l_knee"]
+        st.plotly_chart(_rear_comparison(_fig_key(pr, evr, kick_id, tuple(hl)), pr, evr, kick, tuple(hl)),
+                        width="stretch", config={"displayModeBar": False}, key="cmb_rear")
+    if not table.empty:
+        st.download_button("통합 피드백 표 (CSV)", table.to_csv(index=False).encode("utf-8-sig"),
+                           file_name="kick_feedback_combined.csv", mime="text/csv")
+
+
 def render(default_height_cm: int, foot: str = "R") -> None:
     """탭 5 전체."""
     st.subheader("🎥 내 킥 분석")
@@ -358,6 +435,19 @@ def render(default_height_cm: int, foot: str = "R") -> None:
     ids = list(analyses)
     if st.session_state.get(STATE) not in analyses:
         st.session_state[STATE] = ids[-1]
+    views = {i: _analysis_view(d) for i, d in analyses.items()}
+    if "side" in views.values() and "rear" in views.values():
+        mode = st.radio("보기", ["영상 하나씩", "측면 + 후면 함께"], horizontal=True, key="video_mode",
+                        help="따로 찍은 측면·후면 영상(같은 킥 종류)을 짝지어 킥 종류 하나와 통합 피드백으로 보여 줍니다.")
+        if mode == "측면 + 후면 함께":
+            with st.sidebar:
+                st.divider()
+                if st.button(f"분석 결과 모두 지우기 ({len(ids)}개)"):
+                    st.session_state.pop(STATE, None)
+                    st.session_state.pop(ANALYSES, None)
+                    st.rerun()
+            _combined_section(analyses, views)
+            return
     if len(ids) > 1:
         st.radio("분석 결과 선택", ids, key=STATE, format_func=lambda i: analyses[i]["name"], horizontal=True,
                  help="올린 영상마다 따로 분석했습니다. 골라서 결과를 보세요.")
@@ -373,7 +463,8 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         cutoff = st.slider("저역통과 필터 차단 주파수 (Hz)", *CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, 0.5,
                            help="4차 Butterworth, 양방향(filtfilt). 생체역학 동작 데이터의 표준 처리입니다.")
         view_label = st.radio("촬영 방향", list(VIEW_OPTIONS), key=f"view_{sid}",
-                              help="자동 감지: 영상에서 양 어깨가 겹쳐 보이는 순간이 있으면 측면, 내내 벌어져 보이면 후면으로 판단합니다.")
+                              help="자동 감지: 발이 옆으로 길게 보이면 측면, 짧게(카메라 쪽을 향해) 보이면 후면으로 판단하고, "
+                                   "애매할 때만 양 어깨 간격을 봅니다.")
         if st.button("분석 결과 지우기" if len(ids) == 1 else f"분석 결과 모두 지우기 ({len(ids)}개)"):
             st.session_state.pop(STATE, None)
             st.session_state.pop(ANALYSES, None)

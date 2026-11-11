@@ -15,7 +15,8 @@ WINDOW = (-0.25, 0.20)      # 임팩트 기준 비교 구간 (s)
 RESAMPLE_HZ = 100.0
 FEATURES = ["r_hip", "r_knee", "r_ankle", "l_knee", "trunk", "height"]
 TEMPLATE_FPS = 120.0
-TEMPERATURE = 0.10          # softmax 온도 (DTW 거리 단위)
+TEMPERATURE = 0.50          # softmax 온도 (DTW 거리 단위). 0.10이면 실제 영상에서 틀린 답에도 90~100%가 붙었다
+                            # (2026-11-12, 킥모음 측면 12개 중 1위 정답 1개). 0.50에서도 합성 템플릿은 모두 1위로 맞힌다.
 GATE_PENALTY = 1.0          # 게이트 밖 킥에 더하는 거리 (사실상 순위 뒤로)
 GROUP_GAP = 0.15            # 같은 그룹 상위 후보의 신뢰도 차이가 이보다 작으면 그룹으로 표시
 LOW_CONFIDENCE = 0.5        # 1위 신뢰도가 이보다 낮으면 단정하지 않음

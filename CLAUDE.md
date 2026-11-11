@@ -117,7 +117,7 @@ kick-viz/
 │   └── kick_loader.py          # JSON 로드 + 스키마 검증
 ├── video/                      # 영상 분석 (10장)
 │   ├── pose_extract.py, pose_series.py, clean.py, preprocess.py, angles_from_pose.py
-│   ├── events.py, classify.py, feedback.py, frontal.py, synthetic.py
+│   ├── events.py, classify.py, feedback.py, frontal.py, synthetic.py, combined.py(측면+후면 함께)
 ├── viz/
 │   ├── __init__.py
 │   ├── stickfigure.py          # Plotly 스틱 피규어 + 애니메이션 (2D, 사람 윤곽)
@@ -541,7 +541,8 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 
 | 2026-11-11 | **실제 영상 정확도 개선 (V7 일부)**: 킥모음 측면 영상 11개에서 찾은 오류 대응 — 좌우 다리 이름 뒤바뀜 보정(2차 비터비), 스파이크·첫 프레임 튐 제거(`video/clean.py`), 속도 최고점 탐색 시 영상 경계 제외·중앙값 필터, 디딤 검출 강건화(중앙값 필터·임팩트 직전 허용·두 발 겹침 구간 제외), 템플릿 평균 3개 이상은 중앙값, 성능 평가 스크립트. 킥모음 측면 11개: 차는 발 9→11/11, 단계 검출 실패 10→2, 각도 떨림 1.57→1.43 (분류 Top-1 1/11로 변화 없음) | `video/clean.py`, `video/preprocess.py`, `video/events.py`, `video/pose_series.py`, `video/template_from_video.py`, `scripts/evaluate_videos.py`, `tests/test_clean.py` | 482 통과 |
 | 2026-11-11 | **촬영 방향 자동 감지: 발 겉보기 길이 기준**: 어깨가 많이 열린 측면 영상을 후면으로 오판하던 문제. 발 길이(측면에서 길고 후면에서 짧음)를 1차 기준, 애매할 때만 어깨 간격. 실제 영상 20개 18 → 20 정답. 어깨만 열린 측면은 경고 대신 안내 | `video/preprocess.py`, `video_tab.py`, `tests/test_rear.py`, `tests/test_preprocess.py` | 484 통과 |
+| 2026-11-12 | **측면 + 후면 함께 분석 + 분류 신뢰도 보정**: 탭 5에 측면·후면 결과가 모두 있으면 '측면 + 후면 함께' 보기 — 파일 이름으로 짝 찾기(`video/combined.py`), 킥 종류 하나(측면 추천 + 사용자 확정), 측면·후면 지표를 한 리포트(영상 열, Top 3 통합), 비교 그림 탭. 따로 찍은 두 킥임을 안내. 후면 발 방향은 실제 영상에서 기대와 반대로 측정되고 후면 임팩트도 흔들려 **분류에는 쓰지 않음**. 분류 softmax 온도 0.10 → 0.50(실제 영상 12개 1위 정답 1개인데 틀린 답에 90~100%가 붙던 문제), 표시를 '템플릿 유사도'로 | `video/combined.py`, `video_tab.py`, `video/classify.py`, `tests/test_combined.py` | 487 통과 |
 
-**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 킥 자동 분류는 실제 영상(30 fps, 아마추어)에서 정확도가 낮다(1/11) — 템플릿이 선행연구 추정값이고
+**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 킥 자동 분류를 실제로 쓸 만하게 하려면 킥 종류별 실제 영상(측면·후면 각 5~10개 이상)으로 템플릿 대신 실제 예시와 비교하는 분류기가 필요하다 (후면 발 방향 단서도 그때 검증). 킥 자동 분류는 실제 영상(30 fps, 아마추어)에서 정확도가 낮다(1/11) — 템플릿이 선행연구 추정값이고
 30 fps에서 임팩트 근처 각도가 뭉개지는 영향. 하프발리처럼 사람이 작게 찍히고 접근 중 두 다리가 한 다리로 겹쳐 잡히는 영상은 정리 후에도 임팩트가 틀린다. 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.
 숙련자 측면 영상(킥 종류별, 가능하면 120 fps 이상, 여러 번)으로 `scripts/template_from_video.py`를 돌려 추정 템플릿(인스텝 외 7개)을 실측으로 바꾼다.
