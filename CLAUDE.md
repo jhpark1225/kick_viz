@@ -97,6 +97,7 @@ kick-viz/
 ├── models/pose_landmarker_full.task   # MediaPipe 포즈 모델
 ├── scripts/build_feedback_rules.py    # 측면 피드백 기준 생성기
 ├── scripts/template_from_video.py     # 숙련자 측면 영상 → 킥 템플릿 JSON (여러 영상 평균)
+├── scripts/build_reference_set.py     # 직접 찍은 킥 영상 폴더 → 실측 참조 데이터 + 교차검증
 ├── scripts/evaluate_videos.py         # 측면 영상 폴더로 성능 평가 (관절 좌표 정리 전후 비교, CSV)
 ├── data/
 │   ├── 축구킥_생체역학_정리.xlsx  # 사용자가 넣어둠 (없으면 설명 탭만 안내문 표시)
@@ -117,7 +118,7 @@ kick-viz/
 │   └── kick_loader.py          # JSON 로드 + 스키마 검증
 ├── video/                      # 영상 분석 (10장)
 │   ├── pose_extract.py, pose_series.py, clean.py, preprocess.py, angles_from_pose.py
-│   ├── events.py, classify.py, feedback.py, frontal.py, synthetic.py, combined.py(측면+후면 함께)
+│   ├── events.py, classify.py, feedback.py, frontal.py, synthetic.py, combined.py(측면+후면 함께), reference.py(실측 참조)
 ├── viz/
 │   ├── __init__.py
 │   ├── stickfigure.py          # Plotly 스틱 피규어 + 애니메이션 (2D, 사람 윤곽)
@@ -543,7 +544,8 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 | 2026-11-11 | **촬영 방향 자동 감지: 발 겉보기 길이 기준**: 어깨가 많이 열린 측면 영상을 후면으로 오판하던 문제. 발 길이(측면에서 길고 후면에서 짧음)를 1차 기준, 애매할 때만 어깨 간격. 실제 영상 20개 18 → 20 정답. 어깨만 열린 측면은 경고 대신 안내 | `video/preprocess.py`, `video_tab.py`, `tests/test_rear.py`, `tests/test_preprocess.py` | 484 통과 |
 | 2026-11-12 | **측면 + 후면 함께 분석 + 분류 신뢰도 보정**: 탭 5에 측면·후면 결과가 모두 있으면 '측면 + 후면 함께' 보기 — 파일 이름으로 짝 찾기(`video/combined.py`), 킥 종류 하나(측면 추천 + 사용자 확정), 측면·후면 지표를 한 리포트(영상 열, Top 3 통합), 비교 그림 탭. 따로 찍은 두 킥임을 안내. 후면 발 방향은 실제 영상에서 기대와 반대로 측정되고 후면 임팩트도 흔들려 **분류에는 쓰지 않음**. 분류 softmax 온도 0.10 → 0.50(실제 영상 12개 1위 정답 1개인데 틀린 답에 90~100%가 붙던 문제), 표시를 '템플릿 유사도'로 | `video/combined.py`, `video_tab.py`, `video/classify.py`, `tests/test_combined.py` | 487 통과 |
 | 2026-11-12 | **분류 특징 개선**: DTW 특징에서 임팩트 발목 각도 제외(실제 영상에서 블러로 20~50° 작게 측정돼 인사이드·로빙으로 쏠림), 각도는 구간 평균을 빼 시간에 따른 모양만 비교(카메라·MediaPipe 편향 제거), 접촉 높이는 절대값 유지. 실제 측면 12개: 1위 정답 1 → 2, 상위 3개 3 → 7 (같은 영상으로 후보 2개만 한 번씩 평가 — 낙관적일 수 있음), 합성 16/16 유지. 분류 근거에서 발목 문장 제거 | `video/classify.py` | 487 통과 |
+| 2026-11-12 | **실측 참조 데이터로 분류 (데이터 기반)**: `scripts/build_reference_set.py` — 영상 폴더(이름 첫 단어 = 정답 킥) → 특징(관절 각도 흐름)만 추출, leave-one-out 교차검증(사람 단위 `--by-person`), 혼동표, `--write`로 `data/reference_kicks.json`. 분류는 참조가 8개 이상이면 킥마다 가장 가까운 실제 예시와의 DTW(1-최근접 이웃), 참조 없는 킥은 애니메이션. 앱에 비교 방식 표시. 킥모음 측면 12개 교차검증: 실측 비교 1위 5/12 vs 애니메이션 2/12 — 단 인스텝 외에는 1개씩이라 사실상 인스텝만 검증, 인스텝 5개 중 일부는 같은 킥의 다른 속도 저장본이라 낙관적. 참조 파일은 아직 만들지 않음(데이터 수집 후). `.gitignore`에 영상·캐시 추가, 테스트용 conftest가 참조 파일 무시 | `video/reference.py`, `video/classify.py`, `scripts/build_reference_set.py`, `video_tab.py`, `tests/test_reference.py`, `tests/conftest.py` | 493 통과 |
 
-**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 킥 자동 분류를 실제로 쓸 만하게 하려면 킥 종류별 실제 영상(측면·후면 각 5~10개 이상)으로 템플릿 대신 실제 예시와 비교하는 분류기가 필요하다 (후면 발 방향 단서도 그때 검증). 킥 자동 분류는 실제 영상(30 fps, 아마추어)에서 정확도가 낮다(1/11) — 템플릿이 선행연구 추정값이고
+**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 킥 자동 분류: 킥 종류별 측면 영상 10개 이상(2~3명, 슬로모션)을 모아 `scripts/build_reference_set.py`로 교차검증 후 `--write` (후면 발 방향 단서도 그때 검증). 킥 자동 분류는 실제 영상(30 fps, 아마추어)에서 정확도가 낮다(1/11) — 템플릿이 선행연구 추정값이고
 30 fps에서 임팩트 근처 각도가 뭉개지는 영향. 하프발리처럼 사람이 작게 찍히고 접근 중 두 다리가 한 다리로 겹쳐 잡히는 영상은 정리 후에도 임팩트가 틀린다. 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.
 숙련자 측면 영상(킥 종류별, 가능하면 120 fps 이상, 여러 번)으로 `scripts/template_from_video.py`를 돌려 추정 템플릿(인스텝 외 7개)을 실측으로 바꾼다.

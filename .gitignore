@@ -16,3 +16,10 @@ data/_backup/
 
 # Streamlit 비밀값
 .streamlit/secrets.toml
+
+# 킥 영상·관절 좌표 캐시 (개인 영상이 GitHub에 올라가지 않도록 — 참조 데이터는 data/reference_kicks.json에 특징만)
+*.mp4
+*.mov
+*.MOV
+*.avi
+.pose_cache/

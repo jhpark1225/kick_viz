@@ -9,6 +9,7 @@ from biomech.kick_loader import available_kicks, load_kick
 from video.events import Events, detect_events, kick_foot_point
 from video.pose_series import Processed
 from video.preprocess import DEFAULT_CUTOFF_HZ, preprocess
+from video.reference import MIN_REFERENCE, Example, load_reference
 from video.synthetic import synthesize
 
 WINDOW = (-0.25, 0.20)      # 임팩트 기준 비교 구간 (s)
@@ -45,6 +46,7 @@ class Classification:
     group: str | None = None
     group_members: list[str] = field(default_factory=list)
     distances: dict[str, float] = field(default_factory=dict)
+    method: str = "내장 애니메이션과 비교"
 
     @property
     def top3(self) -> list[tuple[str, float]]:
@@ -175,8 +177,13 @@ def find_group(ranking: list[tuple[str, float]]) -> tuple[str | None, list[str]]
     return None, []
 
 
-def classify(p: Processed, ev: Events | None = None) -> Classification:
-    """사용자 동작을 11개 킥 템플릿과 비교해 분류한다."""
+def classify(p: Processed, ev: Events | None = None, reference: list[Example] | None = None) -> Classification:
+    """사용자 동작을 분류한다.
+
+    참조 데이터(실제 영상 특징, video/reference.py)가 MIN_REFERENCE개 이상이면 킥마다 가장 가까운 실제 예시와의
+    DTW 거리(1-최근접 이웃)를 쓴다. 참조 예시가 없는 킥과 참조가 부족할 때는 내장 애니메이션(템플릿)과 비교한다.
+    reference=None이면 data/reference_kicks.json을 읽고, []이면 템플릿만 쓴다.
+    """
     if p.view != "side":
         raise ValueError("킥 자동 분류는 측면 영상에서만 할 수 있습니다")
     ev = ev or detect_events(p)
@@ -187,16 +194,30 @@ def classify(p: Processed, ev: Events | None = None) -> Classification:
     cutoff = p.cutoff_hz or DEFAULT_CUTOFF_HZ
     scale = feature_scales(p.H, cutoff)
     user = feature_matrix(p, p.t[ev.impact]) / scale
-    side_foot = foot_length_ratio(p, ev.impact) < INSIDE_FOOT_RATIO
-    dist = {}
+    ref = load_reference() if reference is None else reference
+    by_label: dict[str, list[Example]] = {}
+    for e in ref:
+        by_label.setdefault(e.label, []).append(e)
+    use_ref = len(ref) >= MIN_REFERENCE
+    side_foot = not use_ref and foot_length_ratio(p, ev.impact) < INSIDE_FOOT_RATIO
+    dist, from_ref = {}, []
     for k in available_kicks():
-        d = dtw_distance(user, template_features(k, p.H, cutoff) / scale)
-        if side_foot and k == "inside":
-            d *= INSIDE_BONUS
+        if use_ref and by_label.get(k):
+            d = min(dtw_distance(user, e.seq / scale) for e in by_label[k])
+            from_ref.append(k)
+        else:
+            d = dtw_distance(user, template_features(k, p.H, cutoff) / scale)
+            if side_foot and k == "inside":
+                d *= INSIDE_BONUS
         dist[k] = d + (0.0 if k in cands else GATE_PENALTY)
     if side_foot:
         evidence.append("측면에서 발이 짧아 보임(고관절 외회전 추정) → 인사이드 쪽 가중")
+    if use_ref:
+        method = f"실제 영상 {len(ref)}개와 비교" + ("" if len(from_ref) == len(dist) else
+                                                 f" (참조 영상 없는 킥 {len(dist) - len(from_ref)}종은 내장 애니메이션)")
+    else:
+        method = "내장 애니메이션과 비교"
     ranking = softmax_conf(dist)
     group, members = find_group(ranking)
     return Classification(ranking=ranking, gate=gate_name, candidates=cands, evidence=evidence[:3],
-                          group=group, group_members=members, distances=dist)
+                          group=group, group_members=members, distances=dist, method=method)

@@ -215,8 +215,13 @@ def _classification_section(p, ev, sid: str) -> str:
         st.markdown(f"**상위 3개 후보 (템플릿 유사도)** · 규칙 게이트: {c.gate}")
         for k, conf in c.top3:
             st.progress(float(conf), text=f"{_kick_name(k)} — {conf:.0%}")
-        st.caption("유사도 = 내장 애니메이션과 관절 각도 흐름이 얼마나 비슷한지입니다. 정답 확률이 아닙니다. "
-                   "실제 영상에서는 아직 정확도가 낮아(템플릿이 추정값, 측면에서 발 방향이 안 보임) 참고용입니다.")
+        if c.method.startswith("실제 영상"):
+            st.caption(f"비교 방식: **{c.method}** · 유사도 = 직접 찍어 모은 킥 영상 중 가장 비슷한 영상과의 관절 각도 흐름 "
+                       "유사도입니다. 정답 확률이 아닙니다.")
+        else:
+            st.caption("비교 방식: **내장 애니메이션과 비교** · 유사도 = 애니메이션과 관절 각도 흐름이 얼마나 비슷한지입니다. "
+                       "정답 확률이 아닙니다. 실제 영상에서는 정확도가 낮아(애니메이션이 추정값, 측면에서 발 방향이 안 보임) "
+                       "참고용입니다. 킥 종류별 실제 영상을 모아 참조 데이터를 만들면 정확도가 올라갑니다.")
     with col2:
         st.markdown("**판단 근거**")
         for e in c.evidence:
