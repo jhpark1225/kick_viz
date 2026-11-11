@@ -16,7 +16,9 @@ FILTER_ORDER = 4
 LOW_FPS = 60.0
 SIDE_VIEW_MAX_RATIO = 0.35  # (양 어깨 x 간격 ÷ 몸통 길이) 하위 20% 값 상한 — 넘으면 후면·정면 촬영
 VIEW_QUANTILE = 0.2         # 측면 영상도 킥 순간엔 몸이 열려 어깨가 벌어지므로, 겹쳐 보이는 순간(하위 20%)으로 판단
-REAR_VIEW_MIN_RATIO = 0.45  # 후면 분석일 때 이보다 작으면 사선·측면 촬영 경고
+REAR_VIEW_MIN_RATIO = 0.45  # 후면 분석일 때 이보다 작으면 사선·측면 촬영 경고 (발 길이를 못 잴 때만)
+FOOT_SIDE_MIN = 0.23        # 발 겉보기 길이 ÷ 다리 길이가 이 이상이면 측면 (발이 옆으로 길게 보임)
+FOOT_REAR_MAX = 0.17        # 이 이하면 후면 (발이 카메라 쪽을 향해 짧게 보임). 사이 값은 어깨 간격으로 판단
 OFFSCREEN_MAX_FRAC = 0.20
 LEG_RATIO = SEGMENT_RATIOS["thigh"] + SEGMENT_RATIOS["shank"]   # 0.491 H
 SCALE_EXCLUDE_S = 0.15      # 스케일 계산에서 제외할 킥 직전 구간 (s)
@@ -160,8 +162,33 @@ def shoulder_ratio(raw: PoseSeries) -> float:
     return float(np.quantile(gap / np.maximum(torso, 1e-9), VIEW_QUANTILE))
 
 
+def foot_ratio(raw: PoseSeries) -> float | None:
+    """발 겉보기 길이 = (뒤꿈치→발끝 가로 길이, 두 발 중 긴 쪽) ÷ (대퇴+하퇴 길이)의 중앙값.
+
+    옆에서 보면 발이 가로로 길게 보이고(약 0.25~0.30), 뒤에서 보면 발이 카메라 쪽을 향해 짧게 보인다(약 0.1).
+    어깨·골반이 열리는 킥(감아차기·인사이드)에도 흔들리지 않는다. 발 랜드마크가 없으면 None.
+    """
+    xy = raw.xy
+    leg = np.concatenate([np.linalg.norm(xy[f"{s}_hip"] - xy[f"{s}_knee"], axis=1)
+                          + np.linalg.norm(xy[f"{s}_knee"] - xy[f"{s}_ankle"], axis=1) for s in "lr"])
+    foot = np.maximum(np.abs(xy["l_toe"][:, 0] - xy["l_heel"][:, 0]), np.abs(xy["r_toe"][:, 0] - xy["r_heel"][:, 0]))
+    if not np.isfinite(foot).any() or not np.isfinite(leg).any():
+        return None
+    return float(np.nanmedian(foot) / max(float(np.nanmedian(leg)), 1e-9))
+
+
 def detect_view(raw: PoseSeries) -> str:
-    """촬영 방향 자동 감지: 'side'(측면) 또는 'rear'(후면·정면 = 관상면)."""
+    """촬영 방향 자동 감지: 'side'(측면) 또는 'rear'(후면·정면 = 관상면).
+
+    1차 기준은 발 겉보기 길이(어깨가 열려도 안정적), 애매한 구간(0.18~0.23)에서만 어깨 간격으로 정한다.
+    실제 영상(측면 14개·후면 7개)에서 발 길이는 측면 0.25~0.28, 후면 0.07~0.20이었고,
+    어깨 간격만 쓰면 어깨가 많이 열린 측면 영상(감아차기 0.45 등)을 후면으로 오판했다.
+    """
+    f = foot_ratio(raw)
+    if f is not None and f >= FOOT_SIDE_MIN:
+        return "side"
+    if f is not None and f <= FOOT_REAR_MAX:
+        return "rear"
     return "rear" if shoulder_ratio(raw) > SIDE_VIEW_MAX_RATIO else "side"
 
 
@@ -231,12 +258,17 @@ def preprocess(raw: PoseSeries, H: float, fps: float | None = None,
     xy_unf = {k: v - np.array([x0, g]) for k, v in to_body_frame(xy_filled, flip, px_per_m).items()}
 
     # 6) 촬영 각도 품질 검사
-    ratio = shoulder_ratio(raw)
-    if view == "side" and ratio > SIDE_VIEW_MAX_RATIO:
-        warnings.append(("warning", "정면/사선 촬영으로 보입니다. 측면에서 찍어야 정확합니다. "
+    ratio, fr = shoulder_ratio(raw), foot_ratio(raw)
+    side_like = fr >= FOOT_SIDE_MIN if fr is not None else ratio <= SIDE_VIEW_MAX_RATIO
+    rear_like = fr <= FOOT_REAR_MAX if fr is not None else ratio >= REAR_VIEW_MIN_RATIO
+    if view == "side" and rear_like:
+        warnings.append(("warning", "발이 짧게(카메라 쪽을 향해) 보여 정면/후면 촬영으로 보입니다. 측면에서 찍어야 정확합니다. "
                                     "후면 영상이라면 촬영 방향을 '후면'으로 선택하세요."))
-    if view == "rear" and ratio < REAR_VIEW_MIN_RATIO:
-        warnings.append(("warning", "양 어깨가 거의 겹쳐 보여 측면(또는 사선) 촬영으로 보입니다. "
+    elif view == "side" and ratio > SIDE_VIEW_MAX_RATIO:
+        warnings.append(("info", "어깨가 많이 열려 보이지만 발이 옆으로 길게 보여 측면 촬영으로 판단했습니다. "
+                                 "카메라가 비스듬하면 각도가 조금 틀어질 수 있습니다."))
+    if view == "rear" and side_like:
+        warnings.append(("warning", "발이 옆으로 길게 보여 측면(또는 사선) 촬영으로 보입니다. "
                                     "후면 분석은 선수 바로 뒤에서 찍어야 정확합니다."))
     out = np.zeros(raw.n, dtype=bool)
     for v in raw.xy.values():

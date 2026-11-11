@@ -8,7 +8,8 @@ from video.classify import classify
 from video.events import detect_events
 from video.feedback import IMPROVE, METRICS, load_rules, make_feedback
 from video.frontal import RULES_REAR_PATH, compute_frontal_metrics, rear_rules
-from video.preprocess import detect_view, preprocess
+from video.preprocess import (FOOT_SIDE_MIN, SIDE_VIEW_MAX_RATIO, detect_view, foot_ratio, preprocess,
+                              shoulder_ratio)
 from video.synthetic import PX_PER_M, synthesize
 
 H = 1.75
@@ -44,6 +45,33 @@ def test_side_view_with_opening_trunk():
     xy["l_shoulder"][mid, 0] += 0.3 * torso[mid]        # 어깨 간격 ÷ 몸통 = 0.6 (후면 수준)
     xy["r_shoulder"][mid, 0] -= 0.3 * torso[mid]
     assert detect_view(raw) == "side"
+
+
+def test_side_view_with_shoulders_open_whole_video():
+    """측면 영상에서 어깨가 영상 내내 후면만큼 벌어져 보여도(카메라 사선·몸통 열림) 발 길이로 측면 판단.
+
+    실제 감아차기 측면 영상에서 어깨 간격 하위 20% 값이 0.45로 후면 기준(0.35)을 넘어 오판했던 경우.
+    """
+    raw = synthesize(load_kick("curve"), H, FPS)
+    xy = raw.xy
+    torso = np.linalg.norm((xy["l_shoulder"] + xy["r_shoulder"]) / 2 - (xy["l_hip"] + xy["r_hip"]) / 2, axis=1)
+    xy["l_shoulder"][:, 0] += 0.25 * torso
+    xy["r_shoulder"][:, 0] -= 0.25 * torso
+    assert shoulder_ratio(raw) > SIDE_VIEW_MAX_RATIO
+    assert foot_ratio(raw) >= FOOT_SIDE_MIN
+    assert detect_view(raw) == "side"
+    p = preprocess(raw, H, FPS, view="auto")
+    assert p.view == "side" and not any("정면/후면" in m for _, m in p.warnings)
+
+
+def test_view_falls_back_to_shoulders_without_feet():
+    """발 랜드마크가 없으면 예전처럼 어깨 간격으로 판단한다."""
+    for view in ("side", "rear"):
+        raw = synthesize(load_kick("instep"), H, FPS, view=view)
+        for k in ("l_heel", "l_toe", "r_heel", "r_toe"):
+            raw.xy[k][:] = np.nan
+        assert foot_ratio(raw) is None
+        assert detect_view(raw) == view
 
 
 @pytest.mark.parametrize("kick_id", GROUND_KICKS)

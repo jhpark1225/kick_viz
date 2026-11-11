@@ -103,10 +103,18 @@ def test_quality_warnings():
     assert any("60fps 미만" in w for _, w in p.warnings)
     p = preprocess(synthesize(kick, H, FPS), H, FPS)
     assert not any(lvl == "warning" for lvl, _ in p.warnings)
-    # 정면 촬영: 양 어깨 x 간격이 몸통 길이의 절반
+    # 정면 촬영: 양 어깨 x 간격이 몸통 길이의 절반 + 발이 카메라 쪽을 향해 짧게 보임
     raw = synthesize(kick, H, FPS)
     raw.xy["l_shoulder"] = raw.xy["l_shoulder"] + np.array([0.5 * 0.288 * H * 380, 0])
-    assert any("정면/사선" in w for _, w in preprocess(raw, H, FPS).warnings)
+    for s in "lr":
+        raw.xy[f"{s}_toe"][:, 0] = raw.xy[f"{s}_heel"][:, 0] + 0.02 * H * 380
+    assert any("정면/후면" in w for _, w in preprocess(raw, H, FPS).warnings)
+    # 어깨만 열린 측면 영상(발은 옆으로 길게 보임): 경고 대신 측면으로 판단했다는 안내
+    raw = synthesize(kick, H, FPS)
+    raw.xy["l_shoulder"] = raw.xy["l_shoulder"] + np.array([0.5 * 0.288 * H * 380, 0])
+    ws = preprocess(raw, H, FPS).warnings
+    assert not any(lvl == "warning" for lvl, _ in ws)
+    assert any(lvl == "info" and "어깨가 많이 열려" in w for lvl, w in ws)
     # 화면 이탈: 영상 폭을 줄여 몸 일부가 밖에 있게 함
     raw = synthesize(kick, H, FPS)
     raw.width = int(np.median(raw.xy["r_toe"][:, 0]))

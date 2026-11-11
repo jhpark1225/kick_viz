@@ -13,8 +13,8 @@ from video.feedback import (IMPROVE, SAFETY_NOTE, SIDE_VIEW_LIMITS, SIDE_VIEW_NO
                             format_range, format_value, load_rules, make_feedback, split_message)
 from video.pose_extract import (MAX_SECONDS, THUMB_WIDTH, VideoError, extract_from_bytes, find_model,
                                 info_from_bytes, model_help)
-from video.preprocess import (CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, LOW_FPS, SIDE_VIEW_MAX_RATIO, preprocess,
-                              shoulder_ratio)
+from video.preprocess import (CUTOFF_RANGE_HZ, DEFAULT_CUTOFF_HZ, FOOT_REAR_MAX, FOOT_SIDE_MIN, LOW_FPS,
+                              SIDE_VIEW_MAX_RATIO, foot_ratio, preprocess, shoulder_ratio)
 from video.synthetic import synthesize
 from video.template_from_video import build_template, keyframes_from_video, problems
 from video.frontal import (REAR_LIMIT_NOTE, REAR_NOT_MEASURED, REAR_NOT_MEASURED_NOTE, compute_frontal_metrics,
@@ -388,11 +388,13 @@ def render(default_height_cm: int, foot: str = "R") -> None:
     except ValueError as e:
         st.error(f"관절 좌표 전처리에 실패했습니다: {e}")
         return
-    ratio = shoulder_ratio(data["raw"])
+    ratio, fr = shoulder_ratio(data["raw"]), foot_ratio(data["raw"])
+    basis = (f"발 겉보기 길이 ÷ 다리 길이 = {fr:.2f} ({FOOT_SIDE_MIN:.2f} 이상 측면, {FOOT_REAR_MAX:.2f} 이하 후면)"
+             if fr is not None else "발 길이 측정 불가")
     st.caption(f"촬영 방향: **{VIEW_NAMES[p.view]}**" + (" (자동 감지 — 틀렸다면 사이드바에서 바꾸세요)"
                                                        if view_req == "auto" else "")
-               + f" · 판정 근거: 어깨 간격 ÷ 몸통 길이 = {ratio:.2f} "
-                 f"({SIDE_VIEW_MAX_RATIO:.2f} 이하 측면, 초과 후면 · 어깨가 가장 겹쳐 보이는 하위 20% 순간 기준)")
+               + f" · 판정 근거: {basis} · 어깨 간격 ÷ 몸통 길이 = {ratio:.2f} (발 길이가 애매할 때만 사용, "
+                 f"{SIDE_VIEW_MAX_RATIO:.2f} 초과 후면)")
 
     # 3) 품질 경고
     for level, msg in p.warnings:
