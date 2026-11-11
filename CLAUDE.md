@@ -505,4 +505,8 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 
 | 2026-11-08 | **킥 목록 정리 (11 → 8종)**: '칩 킥' → **로빙**(내부 id `chip`은 유지), 무회전 킥·바이시클 킥·드롭킥/펀트 삭제. 엑셀 4개 시트에서 해당 행 삭제·이름 변경(원본은 data/_backup/), 킥 JSON 3개는 data/_backup/kicks/로 이동, 분류 게이트·그룹·피드백 규칙·펀트 전용 공 낙하 코드 정리 | data/축구킥_생체역학_정리.xlsx, data/kicks/, ideo/classify.py, iomech/projectile.py, scripts/build_feedback_rules.py | 436 통과 |
 
+| 2026-11-11 | **배포 준비 (Streamlit Community Cloud)**: `.gitignore`, 버전 고정 `requirements.txt`(pytest는 `requirements-dev.txt`로 분리), mediapipe용 시스템 패키지 `packages.txt`. 배포 시 Python 3.11 선택. 영상 안내 문구를 "앱 서버에 임시로 올라간 뒤 즉시 삭제"로 수정 | `.gitignore`, `requirements*.txt`, `packages.txt`, `video_tab.py` | 436 통과 |
+| 2026-11-11 | **클라우드 오류 대응 (GitHub에서 수정된 내용 반영)**: `opencv-contrib-python`으로 교체, `packages.txt`에 `libegl1`·`libgles2` 추가, MediaPipe CPU 지정, 서버 라이브러리·모델 로드 실패를 `PoseRuntimeError`(사용자용 안내 + 관리자 로그)로 처리, `.devcontainer` 추가 | `video/pose_extract.py`, `tests/test_runtime_errors.py`, `requirements.txt`, `packages.txt` | 446 통과 |
+| 2026-11-11 | **영상 여러 개 업로드**: 탭 5에서 한 번에 최대 4개(무료 서버 메모리 고려) 올려 각각 분석, "분석 결과 선택"으로 전환. 예시 데이터 결과도 목록에 쌓임, "분석 결과 모두 지우기" | `video_tab.py` | 446 통과 |
+
 **남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.

@@ -32,13 +32,15 @@ GUIDE = """
 - **전신 + 공**이 모두 화면 안에 보이게, **밝은 곳**에서
 - 가능하면 **120fps 이상 슬로모션**
 - **한 영상에 킥 1회**만, 최대 {sec:.0f}초
-- 두 방향을 모두 찍으면 서로 못 보는 부분을 채울 수 있습니다 (각각 올려 분석)
+- 두 방향을 모두 찍으면 서로 못 보는 부분을 채울 수 있습니다 (함께 올리면 각각 분석하고, 결과를 골라서 봅니다)
 """
 VIEW_OPTIONS = {"자동 감지": "auto", "측면": "side", "후면": "rear"}
 VIEW_NAMES = {"side": "측면 (시상면)", "rear": "후면 (관상면)"}
 REAR_ANGLES = ["stance_knee_valgus", "pelvic_obliquity", "trunk_lateral_lean", "arm_abduction"]
 COMPARE_ANGLES = ["r_knee", "r_hip", "r_ankle", "l_knee", "trunk", "l_shoulder"]
-STATE = "video_analysis"
+STATE = "video_analysis"          # 지금 보고 있는 분석 결과의 id
+ANALYSES = "video_analyses"       # id → 분석 결과 (여러 영상)
+MAX_FILES = 4                     # 무료 서버 메모리(약 1 GB)를 생각해 한 번에 올리는 영상 수 제한
 
 
 def _fig_key(p, ev, *extra) -> tuple:
@@ -74,34 +76,52 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
         if model is None:
             st.warning(model_help())
             return
-        up = c1.file_uploader("킥 영상 (mp4, mov, avi · 최대 30초, 200 MB)", type=["mp4", "mov", "avi"])
-        if up is None:
+        ups = c1.file_uploader(f"킥 영상 (mp4, mov, avi · 최대 30초, 200 MB · 한 번에 {MAX_FILES}개까지)",
+                               type=["mp4", "mov", "avi"], accept_multiple_files=True,
+                               help="측면·후면 영상이나 여러 번 찬 영상을 함께 올리면 각각 분석합니다.")
+        if not ups:
             return
+        if len(ups) > MAX_FILES:
+            st.warning(f"영상은 한 번에 {MAX_FILES}개까지 분석합니다. 앞의 {MAX_FILES}개만 사용합니다.")
+            ups = ups[:MAX_FILES]
         infos = st.session_state.setdefault("video_infos", {})
-        if up.file_id not in infos:
-            try:
-                infos[up.file_id] = info_from_bytes(up.getvalue(), "." + up.name.rsplit(".", 1)[-1].lower())
-            except VideoError as e:
-                st.error(str(e))
-                return
-        info = infos[up.file_id]
-        st.caption(f"영상 정보: {info['width']}×{info['height']}, 메타데이터 {info['fps']:.0f} fps, "
-                   f"{info['frames']}프레임, {info['duration']:.1f} s")
-        if info["duration"] > MAX_SECONDS + 0.5:
-            st.error(f"영상 길이가 {info['duration']:.1f} s입니다. {MAX_SECONDS:.0f} s 이하로 잘라서 올려주세요.")
+        ready = []
+        for up in ups:
+            if up.file_id not in infos:
+                try:
+                    infos[up.file_id] = info_from_bytes(up.getvalue(), "." + up.name.rsplit(".", 1)[-1].lower())
+                except VideoError as e:
+                    st.error(f"**{up.name}**: {e}")
+                    continue
+            info = infos[up.file_id]
+            if info["duration"] > MAX_SECONDS + 0.5:
+                st.error(f"**{up.name}**: 영상 길이가 {info['duration']:.1f} s입니다. "
+                         f"{MAX_SECONDS:.0f} s 이하로 잘라서 올려주세요.")
+                continue
+            st.caption(f"**{up.name}** — {info['width']}×{info['height']}, 메타데이터 {info['fps']:.0f} fps, "
+                       f"{info['frames']}프레임, {info['duration']:.1f} s")
+            ready.append((up, info))
+        if not ready:
             return
-        if st.button("▶ 분석 시작", type="primary"):
-            bar = st.progress(0.0, text="관절 좌표를 추출하는 중…")
-            try:
-                raw, thumbs = extract_from_bytes(up.getvalue(), up.name, model,
-                                                 lambda x: bar.progress(x, text=f"관절 좌표를 추출하는 중… {x:.0%}"))
-            except VideoError as e:
-                bar.empty()
-                st.error(str(e))
-                return
-            bar.progress(1.0, text="추출 완료 — 임시 영상 파일을 삭제했습니다.")
-            st.session_state[STATE] = {"id": up.file_id, "raw": raw, "thumbs": thumbs, "name": up.name,
-                                       "height_cm": height_cm, "meta_fps": info["fps"], "demo": None}
+        if st.button(f"▶ 분석 시작 ({len(ready)}개)" if len(ready) > 1 else "▶ 분석 시작", type="primary"):
+            analyses = st.session_state.setdefault(ANALYSES, {})
+            first = None
+            for n, (up, info) in enumerate(ready, 1):
+                label = f"[{n}/{len(ready)}] {up.name} — 관절 좌표를 추출하는 중…"
+                bar = st.progress(0.0, text=label)
+                try:
+                    raw, thumbs = extract_from_bytes(up.getvalue(), up.name, model,
+                                                     lambda x, label=label: bar.progress(x, text=f"{label} {x:.0%}"))
+                except VideoError as e:
+                    bar.empty()
+                    st.error(f"**{up.name}**: {e}")
+                    continue
+                bar.progress(1.0, text=f"[{n}/{len(ready)}] {up.name} — 추출 완료, 임시 영상 파일을 삭제했습니다.")
+                analyses[up.file_id] = {"id": up.file_id, "raw": raw, "thumbs": thumbs, "name": up.name,
+                                        "height_cm": height_cm, "meta_fps": info["fps"], "demo": None}
+                first = first or up.file_id
+            if first:
+                st.session_state[STATE] = first
     else:
         kicks = available_kicks()
         d1, d2, d3, d4 = c1.columns(4)
@@ -115,10 +135,12 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
             raw = synthesize(load_kick(demo_kick), height_cm / 100, demo_fps,
                              noise_frac=0.005 if noise else 0.0, view=demo_view,
                              left_footed=foot == "L", seed=1)
-            st.session_state[STATE] = {"id": f"demo_{demo_kick}_{demo_view}_{demo_fps}_{noise}_{height_cm}_{foot}",
-                                       "raw": raw,
-                                       "thumbs": None, "name": f"예시: {_kick_name(demo_kick)} ({'왼발' if foot == 'L' else '오른발'})",
-                                       "height_cm": height_cm, "meta_fps": float(demo_fps), "demo": demo_kick}
+            sid = f"demo_{demo_kick}_{demo_view}_{demo_fps}_{noise}_{height_cm}_{foot}"
+            st.session_state.setdefault(ANALYSES, {})[sid] = {
+                "id": sid, "raw": raw, "thumbs": None,
+                "name": f"예시: {_kick_name(demo_kick)} · {VIEW_NAMES[demo_view]} ({'왼발' if foot == 'L' else '오른발'})",
+                "height_cm": height_cm, "meta_fps": float(demo_fps), "demo": demo_kick}
+            st.session_state[STATE] = sid
 
 
 def _event_section(p, sid: str):
@@ -307,9 +329,16 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         st.markdown(GUIDE.format(sec=MAX_SECONDS))
 
     _input_section(default_height_cm, foot)
-    data = st.session_state.get(STATE)
-    if not data:
+    analyses = st.session_state.get(ANALYSES, {})
+    if not analyses:
         return
+    ids = list(analyses)
+    if st.session_state.get(STATE) not in analyses:
+        st.session_state[STATE] = ids[-1]
+    if len(ids) > 1:
+        st.radio("분석 결과 선택", ids, key=STATE, format_func=lambda i: analyses[i]["name"], horizontal=True,
+                 help="올린 영상마다 따로 분석했습니다. 골라서 결과를 보세요.")
+    data = analyses[st.session_state[STATE]]
     sid = data["id"]
 
     with st.sidebar:
@@ -322,8 +351,9 @@ def render(default_height_cm: int, foot: str = "R") -> None:
                            help="4차 Butterworth, 양방향(filtfilt). 생체역학 동작 데이터의 표준 처리입니다.")
         view_label = st.radio("촬영 방향", list(VIEW_OPTIONS), key=f"view_{sid}",
                               help="자동 감지: 양 어깨가 벌어져 보이면 후면, 겹쳐 보이면 측면으로 판단합니다.")
-        if st.button("분석 결과 지우기"):
+        if st.button("분석 결과 지우기" if len(ids) == 1 else f"분석 결과 모두 지우기 ({len(ids)}개)"):
             st.session_state.pop(STATE, None)
+            st.session_state.pop(ANALYSES, None)
             st.rerun()
 
     st.divider()
