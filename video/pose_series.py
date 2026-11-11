@@ -40,6 +40,7 @@ class Processed:
     xy_unfiltered: dict[str, np.ndarray]  # 보간만 한 몸 기준 좌표 (임팩트 검출용, 필터 번짐 방지)
     warnings: list[tuple[str, str]] = field(default_factory=list)   # (수준, 문구)
     view: str = "side"                  # "side"(측면, 시상면) 또는 "rear"(후면, 관상면)
+    clean_report: object | None = None  # video.clean.CleanReport (좌우 보정·스파이크 제거 결과)
 
     @property
     def n(self) -> int:

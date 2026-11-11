@@ -83,3 +83,12 @@ def test_fit_hip_lift_reaches_contact_height():
     fixed, check = fit_hip_lift(kick)
     assert check["contact_height"] == pytest.approx(kick["impact"]["contact_height"], abs=0.005)
     assert check["kick_foot_min"] >= 0
+
+
+def test_average_resists_one_bad_run():
+    """영상 3개 중 1개가 크게 틀려도(무릎 +40°, 시각 +0.2 s) 중앙값이라 결과가 끌려가지 않는다."""
+    _, kfs = measured("instep")
+    bad = [{**kf, "r_knee": kf["r_knee"] + 40, "t": round(kf["t"] + 0.2, 3)} for kf in kfs]
+    avg = average_keyframes([kfs, kfs, bad])
+    for a, k in zip(avg, kfs):
+        assert a["r_knee"] == k["r_knee"] and a["t"] == k["t"]

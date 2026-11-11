@@ -7,9 +7,15 @@ import numpy as np
 from biomech.kick_loader import PHASES
 from video.angles_from_pose import seg_angle
 from video.pose_series import Processed
-from video.preprocess import lowpass, speed
+from scipy.signal import medfilt
+
+from video.preprocess import edge_frames, lowpass, robust_speed, speed
 
 PLANT_SPEED = 0.3           # 디딤발 발목 정지 판정 속도 (m/s)
+PLANT_MEDIAN_S = 0.06       # 디딤발 속도의 순간 잡음(관절 좌표 떨림)을 거르는 중앙값 필터 폭 (s)
+PLANT_IMPACT_TOL = 0.03     # 임팩트 직전 이 시간 동안은 디딤발이 흔들려도 허용 (충돌 반동·발뒤꿈치 들림)
+OCCLUDE_RATIO = 0.17        # 차는 발이 디딤발에서 이 거리(× 키) 안으로 들어오면 두 발이 겹쳐 디딤발 좌표가 끌려감
+OCCLUDE_FILTER_SPREAD = 0.6 # 저역통과 필터가 끌려간 좌표를 앞쪽으로 번지게 하는 시간 = 이 값 ÷ 차단 주파수 (s)
 APPROACH_BEFORE_PLANT = 0.2 # 접근 시작 = 디딤 0.2 s 전
 AIR_WINDOW = 0.1            # 공중 동작 판정 구간: 임팩트 ±0.1 s
 AIR_HEIGHT = 0.15           # 공중 동작 판정: 양발 최저점이 지면 + 0.15 m 이상
@@ -78,8 +84,9 @@ def detect_impact(p: Processed) -> int | None:
     최고점은 8 Hz 필터 데이터에서 찾고(노이즈에 강함), 급감속은 약하게 필터한 좌표에서
     후진차분(직전 프레임 대비 감소량)이 가장 큰 프레임으로 찾는다.
     """
-    s8 = speed(kick_foot_point(p.xy), p.fps)
-    ip = int(np.argmax(s8))
+    s8 = robust_speed(kick_foot_point(p.xy), p.fps)
+    e = edge_frames(len(s8), p.fps)
+    ip = e + int(np.argmax(s8[e:len(s8) - e]))
     raw = kick_foot_point(p.xy_unfiltered)
     f, _ = lowpass(raw, p.fps, min(IMPACT_CUTOFF_HZ, 0.8 * p.fps / 2))
     s = speed(f, p.fps)
@@ -108,8 +115,24 @@ def detect_plant(p: Processed, impact: int) -> int | None:
     """디딤: 임팩트 이전에 디딤발 발목 속도가 0.3 m/s 아래로 떨어져 임팩트까지 유지되기 시작한 프레임.
 
     8 Hz 필터가 디딤 순간의 급정지를 부드럽게 만들어 실제보다 약 30 ms 늦게 잡힌다 (알려진 한계).
+    실제 영상은 관절 좌표가 떨려 정지한 발도 순간 속도가 튀므로, 속도에 짧은 중앙값 필터를 걸고
+    임팩트 직전 PLANT_IMPACT_TOL 동안의 흔들림(충돌 반동·뒤꿈치 들림)은 허용한다.
+    또 측면에서는 차는 발이 디딤발 옆을 지나갈 때 두 발이 겹쳐 MediaPipe가 디딤발 점을 차는 발 쪽으로
+    끌어당긴다. 그래서 임팩트 직전 두 발이 OCCLUDE_RATIO × 키 안으로 가까워진 구간은 판정에서 뺀다.
     """
-    s = speed(p.xy["l_ankle"], p.fps)[:impact + 1]
+    s = speed(p.xy["l_ankle"], p.fps)
+    k = max(1, int(round(PLANT_MEDIAN_S * p.fps)) // 2 * 2 + 1)   # 홀수 폭
+    if k >= 3 and len(s) > k:
+        s = medfilt(s, k)
+    end = impact - int(round(PLANT_IMPACT_TOL * p.fps))
+    near = np.linalg.norm(p.xy["r_ankle"] - p.xy["l_ankle"], axis=1) < OCCLUDE_RATIO * p.H
+    j = impact
+    while j > 0 and near[j]:            # 임팩트에서 거꾸로, 두 발이 겹친 구간의 시작
+        j -= 1
+    if j < impact and p.cutoff_hz:      # 필터가 번지게 한 만큼 더 앞에서 끊는다
+        j -= int(round(OCCLUDE_FILTER_SPREAD / p.cutoff_hz * p.fps))
+    end = min(end, j)
+    s = s[:max(end, 1) + 1]
     if len(s) < 2 or s[-1] >= PLANT_SPEED:
         return None
     fast = np.where(s >= PLANT_SPEED)[0]

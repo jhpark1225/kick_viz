@@ -97,6 +97,7 @@ kick-viz/
 ├── models/pose_landmarker_full.task   # MediaPipe 포즈 모델
 ├── scripts/build_feedback_rules.py    # 측면 피드백 기준 생성기
 ├── scripts/template_from_video.py     # 숙련자 측면 영상 → 킥 템플릿 JSON (여러 영상 평균)
+├── scripts/evaluate_videos.py         # 측면 영상 폴더로 성능 평가 (관절 좌표 정리 전후 비교, CSV)
 ├── data/
 │   ├── 축구킥_생체역학_정리.xlsx  # 사용자가 넣어둠 (없으면 설명 탭만 안내문 표시)
 │   ├── feedback_rules.json     # 측면 피드백 기준 (킥별)
@@ -115,7 +116,7 @@ kick-viz/
 │   ├── template_fit.py         # 템플릿 검사 + kick_hip_lift 자동 보정
 │   └── kick_loader.py          # JSON 로드 + 스키마 검증
 ├── video/                      # 영상 분석 (10장)
-│   ├── pose_extract.py, pose_series.py, preprocess.py, angles_from_pose.py
+│   ├── pose_extract.py, pose_series.py, clean.py, preprocess.py, angles_from_pose.py
 │   ├── events.py, classify.py, feedback.py, frontal.py, synthetic.py
 ├── viz/
 │   ├── __init__.py
@@ -130,7 +131,7 @@ kick-viz/
 └── tests/
     ├── test_kinematics.py, test_kicks.py, test_projectile.py
     ├── test_angles_from_pose.py, test_preprocess.py, test_events.py, test_classify.py
-    ├── test_feedback.py, test_compare.py, test_pose_extract.py
+    ├── test_feedback.py, test_compare.py, test_pose_extract.py, test_clean.py
     └── test_view3d.py, test_rear.py, test_ball_flight.py
 ```
 
@@ -428,19 +429,24 @@ Claude Code가 아래 차이점을 반영해 키프레임을 만든다. **반드
 - 모델 파일은 `models/pose_landmarker_full.task`(또는 `_heavy`). 없으면 공식 다운로드 경로를 안내하고 앱은 계속 동작.
 
 ### 10.3 모듈
-`video/pose_extract.py`(영상→랜드마크), `video/preprocess.py`(차는 다리·방향·스케일·필터·품질), `video/angles_from_pose.py`(랜드마크→4.3 각도),
+`video/pose_extract.py`(영상→랜드마크), `video/clean.py`(좌우 뒤바뀜 보정·스파이크 제거), `video/preprocess.py`(차는 다리·방향·스케일·필터·품질), `video/angles_from_pose.py`(랜드마크→4.3 각도),
 `video/events.py`(단계 검출), `video/classify.py`(분류), `video/feedback.py` + `data/feedback_rules.json`(피드백), `viz/compare.py`(비교 그림).
 
 ### 10.4 핵심 규칙
 - **영상은 임시 파일로만 처리하고 분석 직후 삭제.** 디스크 영구 저장·외부 전송 금지. 화면에 "영상은 분석 후 저장되지 않습니다" 표시.
 - 업로드: mp4/mov/avi, 최대 30 s, 200 MB. 사용 랜드마크: 0, 11–16, 23–32. `visibility` 저장.
 - **실제 촬영 fps** 입력칸(기본값 = 메타데이터). 시간 계산은 실제 fps 기준. fps < 60이면 경고.
+- 전처리 0단계 — **관절 좌표 정리**(`video/clean.py`, 2026-11-11 실제 영상에서 관찰된 오류 대응): ① 좌우 다리(무릎·발목·뒤꿈치·발끝)·팔 이름이
+  뒤바뀐 프레임을 **2차 비터비(등속 예측)**로 찾아 바로잡음(고관절은 측면에서 겹쳐 보여 제외), ② 1~2프레임 튀었다 돌아오는 점(몸통 길이 10% 이상)과
+  영상 첫·끝 프레임 튐을 결측 처리 → 아래 보간으로 채움, ③ 대퇴·하퇴 겉보기 길이 이상 프레임 비율은 품질 지표로만 보고(좌표는 안 바꿈).
+  결과는 `Processed.clean_report`, 고친 게 있으면 안내 문구. `preprocess(..., clean=False)`로 끌 수 있다(전후 비교용).
 - 전처리: 발끝 최대 속도가 큰 다리 = 차는 다리(왼발이면 좌우 교환해 내부적으로 항상 `r_` = 차는 다리), 공 차는 방향이 +x가 되게 x 반전, 이미지 y 반전(위 = +y),
   스케일 = 접근 초반 (대퇴+하퇴 길이 중앙값) ÷ (0.491 H), 저신뢰(visibility < 0.5) 최대 5프레임 선형 보간 후 4차 Butterworth `filtfilt`(기본 8 Hz, 6~12 Hz 조절),
   (양 어깨 x 간격 ÷ 몸통 길이) 하위 20% 값 > 0.35이면 측면 촬영 아님 경고, 화면 이탈 프레임 > 20%면 경고.
 - 각도 변환은 **4.4 FK의 정확한 역변환**을 쓴다: `seg_angle(p,q)=atan2(vx, −vy)`, `trunk=atan2(vx, vy)`,
   `hip=a_thigh+trunk`, `knee=a_thigh−a_shank`, `ankle=a_shank−φ_foot`, `shoulder=a_upper+trunk`, `elbow=a_fore−a_upper`. 결과는 −180~180, 키는 4.3과 동일.
-- 단계 검출: 임팩트(발 속도 최대 직후 가장 급격한 감속), 디딤(디딤발 발목 속도 < 0.3 m/s 유지 시작 — 8 Hz 필터 때문에 약 30 ms 늦게 잡힘),
+- 단계 검출: 임팩트(발 속도 최대 직후 가장 급격한 감속), 디딤(디딤발 발목 속도 < 0.3 m/s 유지 시작 — 8 Hz 필터 때문에 약 30 ms 늦게 잡힘.
+  실제 영상 대응: 속도에 0.06 s 중앙값 필터, 임팩트 직전 30 ms 흔들림 허용, 두 발이 0.17 H 안으로 겹친 구간 + 필터 번짐(0.6 ÷ 차단 주파수 s)은 판정에서 제외),
   **백스윙(고관절 최대 신전), 가속(무릎 최대 굴곡)** — 2026-11-11 선행연구(Langhout 2015) 정의로 변경 (이전: 백스윙 = 무릎 최대, 가속 = 허벅지 각속도 최대),
   팔로스루(고관절 굴곡 최대), 접근 시작(디딤 −0.2 s), `airborne`(임팩트 ±0.1 s 양발 최저점이 지면선 + 0.15 m 이상). 실패 시 오류 대신 "검출 실패" + 수동 지정.
 - 분류: ① 규칙 게이트(발리/하프 발리/짧은 백스윙 킥/지면 킥) → ② 임팩트 기준 −0.25~+0.20 s 구간, 특징(`r_hip, r_knee, r_ankle, l_knee, trunk`, 접촉 높이)
@@ -463,12 +469,17 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 - **방향 정규화**: 명세는 "임팩트 전후 차는 발 x 이동 방향"이지만, 공을 몸 뒤쪽으로 차는 동작(당시 바이시클 킥)에서는 반대로 뒤집힌다.
   그래서 접근 구간 디딤발 뒤꿈치→발끝 방향(몸이 향하는 방향)으로 판단하고, 애매할 때만 발 이동 방향을 쓴다. 지면 킥은 두 방법 결과가 같다.
 - **지면 기준선**: 디딤발 하위 5%. 단, 공중 동작처럼 디딤발이 지면에 닿지 않으면 양발 중 더 낮은 값을 쓴다.
+- **속도 최고점 탐색(차는 다리·임팩트)**: 영상 첫·끝 0.03 s(최소 2프레임)는 제외하고, 0.06 s 중앙값 필터를 건 속력으로 찾는다.
+  실제 로빙 영상에서 첫 프레임 좌표 튐이 가장 빠른 '발 속도'로 잡혀 임팩트가 2번째 프레임, 차는 발이 왼발로 판정되던 문제.
 - **임팩트 검출**: 8 Hz 필터는 10 ms 충돌을 여러 프레임으로 번지게 한다. 발 속도 최고점은 8 Hz 데이터에서 찾고,
   급감속은 약하게(25 Hz) 필터한 좌표의 후진차분(직전 프레임 대비 감소량 최대)으로 찾는다.
 - **속도 지표**: 정강이 최대 각속도·임팩트 직전 발 속도는 25 Hz 데이터로 계산(8 Hz는 최고점을 약 30% 깎음). 순서 판정(`sequence_ok`)은 노이즈에 강한 8 Hz 데이터.
 - **인스텝 정강이 각속도 기준**: 선행연구 1500~2500°/s이지만 영상 측정(120 fps·필터)은 최고점이 5~10% 낮게 나와 템플릿(≈1500°/s)도 약 1460°/s로 측정된다.
   하한을 1350°/s로 보정했다 (`feedback_rules.json`의 `note`에 기록).
 - **피드백 기준값**은 각 템플릿을 같은 파이프라인(120 fps 합성 → 전처리 → 이벤트)으로 측정한 값 ± 허용폭이다. JSON을 직접 고쳐도 되며, 생성기를 다시 돌리면 덮어쓴다.
+- **템플릿 평균**(`average_keyframes`): 단계끼리 맞춰 합치므로 시간 정규화가 된다. 영상 3개 이상이면 평균 대신 **중앙값**(한 영상의 검출 오류에 강함).
+- **성능 평가**(`scripts/evaluate_videos.py`): 파일 이름 첫 단어 = 정답 킥. 정리 전/후 각각 차는 발·단계 실패·분류 Top-1/3·각도 떨림을 표와 CSV로.
+  임계값을 평가 영상에 맞춰 조정하지 않는다(조정용·평가용 영상 분리).
 - MediaPipe(C++)는 Windows에서 한글 경로를 열지 못하므로 모델을 `model_asset_buffer`(바이트)로 넘긴다.
 - 썸네일 오버레이를 위해 프레임별 작은 JPEG 썸네일을 세션 메모리에만 보관한다(디스크 저장 없음).
 
@@ -526,5 +537,8 @@ V1 각도 역변환 + 왕복 테스트 → V2 전처리 → V3 이벤트 → V4 
 | 2026-11-11 | **킥 템플릿을 선행연구 기반으로 교체 + 숙련자 영상 → 템플릿 도구**: 8개 킥 키프레임을 인스텝 실측 단계 구조로 재작성(5.1·5.2), JSON에 `evidence`·`sources`, 탭 1 근거 문헌 표시. kick_hip_lift 자동 보정(`biomech/template_fit.py`). 측면 단계 정의 변경(백스윙 = 고관절 최대 신전, 가속 = 무릎 최대 굴곡), 후면 임팩트 = 하강 속도 최고점 이후 최저점. 영상 → 템플릿(`video/template_from_video.py`, `scripts/template_from_video.py`, 탭 5 "🧪"), 여러 영상 평균. 피드백 기준 재생성 | `data/kicks/*.json`, `biomech/template_fit.py`, `video/template_from_video.py`, `scripts/template_from_video.py`, `video/events.py`, `video/classify.py`, `scripts/build_feedback_rules.py`, `app.py`, `video_tab.py` | 460 통과 |
 | 2026-11-11 | **슬로모션 fps 업로드 단계에서 선택**: 메타데이터 < 60 fps 영상마다 "영상 그대로 / 슬로모션 120 / 240fps" 선택(30 fps인데 6 s 이상이면 슬로모션 안내), 선택값이 사이드바 '실제 촬영 fps' 기본값. 저 fps 경고 문구에 해결 방법 추가 | `video_tab.py`, `video/preprocess.py` | 460 통과 |
 
-**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.
+| 2026-11-11 | **실제 영상 정확도 개선 (V7 일부)**: 킥모음 측면 영상 11개에서 찾은 오류 대응 — 좌우 다리 이름 뒤바뀜 보정(2차 비터비), 스파이크·첫 프레임 튐 제거(`video/clean.py`), 속도 최고점 탐색 시 영상 경계 제외·중앙값 필터, 디딤 검출 강건화(중앙값 필터·임팩트 직전 허용·두 발 겹침 구간 제외), 템플릿 평균 3개 이상은 중앙값, 성능 평가 스크립트. 킥모음 측면 11개: 차는 발 9→11/11, 단계 검출 실패 10→2, 각도 떨림 1.57→1.43 (분류 Top-1 1/11로 변화 없음) | `video/clean.py`, `video/preprocess.py`, `video/events.py`, `video/pose_series.py`, `video/template_from_video.py`, `scripts/evaluate_videos.py`, `tests/test_clean.py` | 482 통과 |
+
+**남은 일**: 실제 킥 영상(측면·후면)으로 시험해 임계값 조정 (V7). 킥 자동 분류는 실제 영상(30 fps, 아마추어)에서 정확도가 낮다(1/11) — 템플릿이 선행연구 추정값이고
+30 fps에서 임팩트 근처 각도가 뭉개지는 영향. 하프발리처럼 사람이 작게 찍히고 접근 중 두 다리가 한 다리로 겹쳐 잡히는 영상은 정리 후에도 임팩트가 틀린다. 특히 후면 디딤 검출은 합성 데이터로 검증하지 못했다.
 숙련자 측면 영상(킥 종류별, 가능하면 120 fps 이상, 여러 번)으로 `scripts/template_from_video.py`를 돌려 추정 템플릿(인스텝 외 7개)을 실측으로 바꾼다.

@@ -1,10 +1,11 @@
 """랜드마크 전처리: 결측 보간, 저역통과 필터, 차는 다리 판별, 방향 정규화, 스케일, 품질 검사."""
 
 import numpy as np
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, medfilt
 
 from biomech.body import SEGMENT_RATIOS
 from video.angles_from_pose import angles_from_pose, frontal_angles
+from video.clean import clean_pose
 from video.pose_series import PoseSeries, Processed
 
 VIS_MIN = 0.5               # 이보다 낮은 visibility는 결측으로 본다
@@ -19,6 +20,8 @@ REAR_VIEW_MIN_RATIO = 0.45  # 후면 분석일 때 이보다 작으면 사선·�
 OFFSCREEN_MAX_FRAC = 0.20
 LEG_RATIO = SEGMENT_RATIOS["thigh"] + SEGMENT_RATIOS["shank"]   # 0.491 H
 SCALE_EXCLUDE_S = 0.15      # 스케일 계산에서 제외할 킥 직전 구간 (s)
+EDGE_S = 0.03               # 영상 처음·끝 이 시간(최소 2프레임)은 속도 최고점 탐색에서 뺀다 (필터·보간 경계 효과)
+PEAK_MEDIAN_S = 0.06        # 속도 최고점을 찾기 전 거르는 중앙값 필터 폭 (s): 몇 프레임짜리 좌표 오류는 지우고 킥은 남긴다
 
 LOW_FPS_MSG = ("킥 임팩트는 약 10 ms로 매우 짧아 60fps 미만에서는 각속도·임팩트 검출이 부정확합니다. "
                "슬로모션(120/240fps)으로 찍었다면 사이드바 '실제 촬영 fps'에 그 값을 입력하세요. "
@@ -86,12 +89,33 @@ def speed(p: np.ndarray, fps: float) -> np.ndarray:
     return np.linalg.norm(np.gradient(p, 1 / fps, axis=0), axis=1)
 
 
+def edge_frames(n: int, fps: float) -> int:
+    """속도 최고점 탐색에서 앞뒤로 제외할 프레임 수 (영상이 아주 짧으면 0)."""
+    e = max(2, int(round(EDGE_S * fps)))
+    return e if n > 4 * e else 0
+
+
+def robust_speed(p: np.ndarray, fps: float) -> np.ndarray:
+    """최고점 탐색용 속력: 짧은 중앙값 필터로 순간적인 좌표 오류(가짜 최고점)를 지운다.
+
+    킥 스윙은 약 0.1 s 동안 빠른 속도가 이어지므로 남고, 몇 프레임짜리 오류는 사라진다.
+    """
+    s = speed(p, fps)
+    k = int(round(PEAK_MEDIAN_S * fps)) // 2 * 2 + 1
+    return medfilt(s, k) if k >= 3 and len(s) > k else s
+
+
 def kick_foot(xy: dict[str, np.ndarray], fps: float) -> tuple[str, int]:
-    """발끝 속도 최대값이 큰 쪽 = 차는 다리. (side, 최고 속도 프레임)을 반환한다."""
-    sr, sl = speed(xy["r_toe"], fps), speed(xy["l_toe"], fps)
-    side = "R" if sr.max() >= sl.max() else "L"
+    """발끝 속도 최대값이 큰 쪽 = 차는 다리. (side, 최고 속도 프레임)을 반환한다.
+
+    영상 첫·끝 프레임은 결측 보간·필터 경계 때문에 속도가 가짜로 커질 수 있어 제외한다.
+    """
+    sr, sl = robust_speed(xy["r_toe"], fps), robust_speed(xy["l_toe"], fps)
+    e = edge_frames(len(sr), fps)
+    core = slice(e, len(sr) - e)
+    side = "R" if sr[core].max() >= sl[core].max() else "L"
     s = sr if side == "R" else sl
-    return side, int(np.argmax(s))
+    return side, e + int(np.argmax(s[core]))
 
 
 def kick_direction_flip(xy_px: dict[str, np.ndarray], i_peak: int, approach: slice) -> bool:
@@ -142,16 +166,24 @@ def detect_view(raw: PoseSeries) -> str:
 
 
 def preprocess(raw: PoseSeries, H: float, fps: float | None = None,
-               cutoff_hz: float = DEFAULT_CUTOFF_HZ, view: str = "side") -> Processed:
+               cutoff_hz: float = DEFAULT_CUTOFF_HZ, view: str = "side", clean: bool = True) -> Processed:
     """원시 랜드마크를 몸 기준 좌표(m)·관절 각도 시계열로 바꾼다. fps = 실제 촬영 fps.
 
     view = "side": x = 공 차는 방향, 각도 = 4.3 시상면 각도.
     view = "rear": x = 차는 다리 쪽(좌우), 각도 = 관상면 각도(`frontal_angles`). "auto"면 자동 감지.
+    clean = True: 필터 전에 좌우 다리 이름 뒤바뀜·순간 튐을 바로잡는다 (`video.clean`).
     """
     fps = float(fps or raw.meta_fps)
     if view == "auto":
         view = detect_view(raw)
     warnings: list[tuple[str, str]] = []
+    report = None
+    if clean:
+        # 0) 원시 좌표 정리: 좌우 뒤바뀜 보정 → 스파이크 제거 → 분절 길이 점검
+        raw, report = clean_pose(raw, view)
+        if report.total_swapped or report.spikes:
+            warnings.append(("info", f"관절 좌표 정리: 좌우 이름이 뒤바뀐 프레임 {report.total_swapped}개를 바로잡고, "
+                                     f"순간적으로 튄 점 {report.spikes}개를 앞뒤 프레임으로 보간했습니다."))
     if fps < LOW_FPS:
         warnings.append(("warning", LOW_FPS_MSG))
 
@@ -220,4 +252,4 @@ def preprocess(raw: PoseSeries, H: float, fps: float | None = None,
     return Processed(t=t, xy=xy, vis=vis, angles=angles, fps=fps, H=H,
                      kick_side=side, flipped_x=flip, px_per_m=px_per_m,
                      cutoff_hz=cutoff_hz if applied else None, xy_px=xy_px, xy_unfiltered=xy_unf,
-                     warnings=warnings, view=view)
+                     warnings=warnings, view=view, clean_report=report)

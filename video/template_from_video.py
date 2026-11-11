@@ -75,13 +75,22 @@ def build_template(kfs_measured: list[dict], base: dict, source: str) -> tuple[d
 
 
 def average_keyframes(runs: list[list[dict]]) -> list[dict]:
-    """여러 영상(같은 킥)의 측정 키프레임을 단계별로 평균한다 (시각·각도 모두)."""
+    """여러 영상(같은 킥)의 측정 키프레임을 단계별로 합친다 (시각·각도 모두).
+
+    단계(디딤·백스윙·가속·임팩트…)끼리 맞춰 합치므로 영상마다 동작 속도가 달라도 시간 정규화가 된다.
+    영상이 3개 이상이면 평균 대신 중앙값을 쓴다: 한 영상에서 단계 검출이나 관절 좌표가 틀려도 결과가 끌려가지 않는다.
+    """
+    agg = np.median if len(runs) >= 3 else np.mean
     out = []
     for i, ph in enumerate(PHASES):
         rows = [r[i] for r in runs]
-        kf = {"phase": ph, "t": round(float(np.mean([r["t"] for r in rows])), 3)}
-        kf.update({k: int(round(float(np.mean([r[k] for r in rows])))) for k in ANGLE_KEYS})
+        kf = {"phase": ph, "t": round(float(agg([r["t"] for r in rows])), 3)}
+        kf.update({k: int(round(float(agg([r[k] for r in rows])))) for k in ANGLE_KEYS})
         out.append(kf)
+    # 중앙값은 단계마다 다른 영상에서 올 수 있으므로 시각이 거꾸로 되지 않게 한 프레임(1 ms)씩 민다
+    for a, b in zip(out, out[1:]):
+        if b["t"] <= a["t"]:
+            b["t"] = round(a["t"] + 0.001, 3)
     return out
 
 
