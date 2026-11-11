@@ -13,7 +13,9 @@ from video.synthetic import synthesize
 
 WINDOW = (-0.25, 0.20)      # 임팩트 기준 비교 구간 (s)
 RESAMPLE_HZ = 100.0
-FEATURES = ["r_hip", "r_knee", "r_ankle", "l_knee", "trunk", "height"]
+# 발목(r_ankle)은 뺀다: 임팩트 순간 발이 블러로 뭉개져 MediaPipe 뒤꿈치·발끝이 부정확하고, 실제 영상에서
+# 모든 킥이 템플릿보다 20~50° 작게 측정돼(인스텝 5~11° vs 31°) 발목을 세운 킥(인사이드·로빙)으로 쏠렸다.
+FEATURES = ["r_hip", "r_knee", "l_knee", "trunk", "height"]
 TEMPLATE_FPS = 120.0
 TEMPERATURE = 0.50          # softmax 온도 (DTW 거리 단위). 0.10이면 실제 영상에서 틀린 답에도 90~100%가 붙었다
                             # (2026-11-12, 킥모음 측면 12개 중 1위 정답 1개). 0.50에서도 합성 템플릿은 모두 1위로 맞힌다.
@@ -67,7 +69,12 @@ def feature_matrix(p: Processed, t_impact: float) -> np.ndarray:
     lo, hi = max(WINDOW[0], t_rel[0]), min(WINDOW[1], t_rel[-1])
     grid = np.arange(np.ceil(lo * RESAMPLE_HZ), np.floor(hi * RESAMPLE_HZ) + 1) / RESAMPLE_HZ
     cols = [p.angles[k] for k in FEATURES[:-1]] + [kick_foot_point(p.xy)[:, 1]]
-    return np.stack([np.interp(grid, t_rel, c) for c in cols], axis=1)
+    m = np.stack([np.interp(grid, t_rel, c) for c in cols], axis=1)
+    # 각도는 구간 평균을 빼 '시간에 따른 모양'만 비교한다. 카메라 각도·MediaPipe 편향으로 실제 영상의 각도가
+    # 킥 종류와 상관없이 일정하게 어긋나기 때문이다 (2026-11-12 실제 측면 12개: 상위 3개 정답 3 → 7개).
+    # 접촉 높이(마지막 열)는 공의 높이를 구분하는 정보라 절대값을 유지한다.
+    m[:, :-1] -= m[:, :-1].mean(axis=0)
+    return m
 
 
 @lru_cache(maxsize=64)
@@ -134,11 +141,6 @@ def gate(p: Processed, ev: Events) -> tuple[str, list[str], list[str]]:
 def detail_evidence(p: Processed, ev: Events) -> list[str]:
     """발목·무릎 특징으로 보충 근거를 만든다."""
     out = []
-    ankle = float(p.angles["r_ankle"][ev.impact])
-    if ankle >= 40:
-        out.append(f"임팩트 시 발목 저측굴곡 {ankle:.0f}° → 발등으로 차는 인스텝 계열")
-    elif ankle <= 20:
-        out.append(f"임팩트 시 발목 저측굴곡 {ankle:.0f}° (발을 세워 고정) → 인사이드·토 킥·로빙 쪽")
     mkf = ev.frames.get("가속")
     if mkf is not None:
         knee = float(p.angles["r_knee"][mkf])
