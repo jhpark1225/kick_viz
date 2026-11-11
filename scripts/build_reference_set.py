@@ -48,7 +48,11 @@ def load_raw(v: Path, model, cache: Path):
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("folder", type=Path)
+    ap.add_argument("folders", type=Path, nargs="+", help="영상 폴더 (여러 개 가능)")
+    ap.add_argument("--skip", action="append", default=[], metavar="문자열",
+                    help="이름에 이 문자열이 들어간 영상은 뺀다 (예: --skip 슬로우). 프레임을 반복해 늘린 편집 슬로모션·같은 킥 중복용")
+    ap.add_argument("--impact-of", action="append", default=[], metavar="이름=프레임",
+                    help="임팩트 프레임을 직접 지정 (자동 검출이 틀린 영상, 영상 프레임 번호)")
     ap.add_argument("--height", type=float, default=175, help="선수 키 (cm, 전체 공통)")
     ap.add_argument("--fps", default=None, help="실제 촬영 fps (전체 공통, 슬로모션이면 입력). 없으면 메타데이터")
     ap.add_argument("--fps-of", action="append", default=[], metavar="이름=fps", help="영상별 fps (예: 인스텝_1=240)")
@@ -60,30 +64,36 @@ def main() -> None:
     if model is None:
         sys.exit("models/ 폴더에 pose_landmarker_full.task가 없습니다.")
     fps_of = {k: float(v) for k, v in (s.split("=", 1) for s in a.fps_of)}
+    impact_of = {k: int(v) for k, v in (s.split("=", 1) for s in a.impact_of)}
     H = a.height / 100
     items = []          # (Example, Processed, Events, person)
-    for v in sorted(a.folder.iterdir()):
+    videos = sorted(v for f in a.folders for v in f.iterdir())
+    for v in videos:
         if v.suffix.lower() not in VIDEO_EXT or any(w in v.stem.lower() for w in REAR_WORDS):
+            continue
+        if any(s in v.stem for s in a.skip):
+            print(f"건너뜀 (--skip): {v.name}")
             continue
         label = label_from_name(v.stem)
         if label is None:
             print(f"건너뜀 (이름으로 킥 종류를 알 수 없음): {v.name}")
             continue
-        raw = load_raw(v, model, a.folder / ".pose_cache")
+        raw = load_raw(v, model, v.parent / ".pose_cache")
         fps = fps_of.get(v.stem, float(a.fps) if a.fps else raw.meta_fps)
         try:
             p = preprocess(raw, H, fps, view="side")
         except ValueError as e:
             print(f"건너뜀 (전처리 실패: {e}): {v.name}")
             continue
-        ev = detect_events(p)
+        ev = detect_events(p, {"임팩트": impact_of[v.stem]} if v.stem in impact_of else None)
         if ev.impact is None:
             print(f"건너뜀 (임팩트 검출 실패): {v.name}")
             continue
         person = v.stem.replace("-", "_").split("_")[1] if a.by_person and "_" in v.stem else v.stem
         ex = Example(label, v.stem, feature_matrix(p, p.t[ev.impact]), float(ev.contact_height), fps)
         items.append((ex, p, ev, person))
-        print(f"분석: {v.name} → {label} ({fps:.0f} fps)", flush=True)
+        print(f"분석: {v.name} → {label} ({fps:.0f} fps, 임팩트 {ev.impact}"
+              f"{' 직접 지정' if v.stem in impact_of else ' 자동'})", flush=True)
 
     if not items:
         sys.exit("분석할 영상이 없습니다.")
@@ -125,7 +135,7 @@ def main() -> None:
     if a.write:
         meta = {"created": date.today().isoformat(), "n": n, "counts": n_by, "height_cm": a.height,
                 "loo_top1": round(res["ref"][0] / n, 3), "loo_top3": round(res["ref"][1] / n, 3),
-                "by_person": a.by_person}
+                "by_person": a.by_person, "skip": a.skip, "impact_of": impact_of}
         save_reference(examples, meta)
         print(f"\n저장: {REF_PATH} (영상은 저장하지 않고 관절 각도 흐름만 저장)")
 

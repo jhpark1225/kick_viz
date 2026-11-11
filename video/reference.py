@@ -29,10 +29,11 @@ class Example:
 
 def label_from_name(stem: str) -> str | None:
     """파일 이름 첫 단어 → 킥 id (예: '인스텝_민수_3' → 'instep', 'instep_2' → 'instep')."""
-    head = stem.replace("-", "_").replace(" ", "_").split("_")[0]
-    if head in LABELS.values():
-        return head
-    return LABELS.get(head)
+    s = stem.replace("-", "_").replace(" ", "_")
+    for kid in sorted(set(LABELS.values()), key=len, reverse=True):     # 영문 id ('half_volley'처럼 '_' 포함 가능)
+        if s == kid or s.startswith(kid + "_"):
+            return kid
+    return LABELS.get(s.split("_")[0])
 
 
 def save_reference(examples: list[Example], meta: dict, path: Path = REF_PATH) -> None:

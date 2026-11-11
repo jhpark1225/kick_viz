@@ -27,6 +27,7 @@ def test_label_from_name():
     assert label_from_name("인스텝_민수_3") == "instep"
     assert label_from_name("하프발리-2") == "half_volley"
     assert label_from_name("toe_1") == "toe"
+    assert label_from_name("half_volley_01_KNSU-D_R_real") == "half_volley"
     assert label_from_name("모르는킥") is None
 
 
