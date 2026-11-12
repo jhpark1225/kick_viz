@@ -1,4 +1,4 @@
-"""탭 5 — 🎥 내 킥 분석: 영상 업로드 → 킥 자동 분류 → 수정점 피드백 → 비교 시각화."""
+"""탭 5 — 🎥 내 킥 분석: 분석할 킥 선택 → 영상 업로드 → 수정점 피드백 → 비교 시각화."""
 
 import json
 
@@ -8,7 +8,7 @@ import streamlit as st
 
 from biomech.kick_loader import PHASES, available_kicks, load_kick
 from video.combined import BOTH_NOT_MEASURED, SEPARATE_KICKS_NOTE, auto_pairs, merge_feedback
-from video.classify import GROUP_NOTE, GROUPS, classify, template_processed
+from video.classify import GROUP_NOTE, GROUPS, classify, mismatch_note, template_processed
 from video.events import detect_events
 from video.feedback import (IMPROVE, SAFETY_NOTE, SIDE_VIEW_LIMITS, SIDE_VIEW_NOTE, UNSURE, compute_metrics,
                             format_range, format_value, load_rules, make_feedback, split_message)
@@ -26,7 +26,7 @@ from viz.compare import (REAR_ANGLE_NAMES, angle_compare_chart, angle_label, com
 FPS_HELP = ("스마트폰 슬로모션 영상은 재생 fps(30)로 저장되는 경우가 많습니다. "
             "120/240fps로 찍었다면 실제 촬영 fps를 입력하세요.")
 GUIDE = """
-**측면 촬영** (무릎·발목 각도, 근위→원위 순차, 킥 종류 자동 분류)
+**측면 촬영** (무릎·발목 각도, 근위→원위 순차, 백스윙 크기)
 - 선수 옆 **90°**에서, 차는 방향이 화면 좌우가 되게
 
 **후면 촬영** (디딤 무릎 외반, 골반·몸통 옆 기울기, 디딤발 위치, 팔 벌림)
@@ -45,6 +45,7 @@ REAR_ANGLES = ["stance_knee_valgus", "pelvic_obliquity", "trunk_lateral_lean", "
 COMPARE_ANGLES = ["r_knee", "r_hip", "r_ankle", "l_knee", "trunk", "l_shoulder"]
 STATE = "video_analysis"          # 지금 보고 있는 분석 결과의 id
 ANALYSES = "video_analyses"       # id → 분석 결과 (여러 영상)
+KICK_CHOICE = "video_kick_choice"  # 입력 영역의 '분석할 킥 종류' 선택값
 MAX_FILES = 4                     # 무료 서버 메모리(약 1 GB)를 생각해 한 번에 올리는 영상 수 제한
 SLOWMO_HINT_SECONDS = 6.0         # 30 fps 메타데이터인데 이보다 길면 슬로모션일 가능성이 큼 (킥 1회 ≈ 1~2 s)
 
@@ -85,8 +86,27 @@ def _capture_fps_input(up, info: dict) -> float:
     return options[label]
 
 
+def _clear_results() -> None:
+    """분석 결과와 킥 선택을 지운다 (다른 킥을 분석하려면 지운 뒤 다시 고른다). 버튼 on_click 콜백."""
+    for k in (STATE, ANALYSES, KICK_CHOICE):
+        st.session_state.pop(k, None)
+
+
 def _input_section(default_height_cm: int, foot: str = "R") -> None:
-    """업로드(또는 예시 데이터) + 키 + [분석 시작]."""
+    """분석할 킥 선택 → 업로드(또는 예시 데이터) + 키 + [분석 시작]."""
+    kicks = available_kicks()
+    kick = st.selectbox("분석할 킥 종류", kicks, index=None, placeholder="킥 종류를 선택하세요",
+                        format_func=_kick_name, key=KICK_CHOICE,
+                        help="내가 찬 킥을 고르세요. 피드백과 비교는 이 킥의 모범 동작(기준 템플릿)을 기준으로 합니다.")
+    if kick is None:
+        st.info("먼저 **분석할 킥 종류**를 고르면 영상을 올릴 수 있습니다. 측면 영상만으로는 인사이드·아웃사이드처럼 "
+                "발의 어느 부분으로 찼는지 구분하기 어려워, 킥 종류는 직접 고릅니다.")
+        return
+    done = {d.get("kick") for d in st.session_state.get(ANALYSES, {}).values()}
+    locked = bool(done) and done != {kick}     # 분석 결과는 킥 하나 기준으로만 모은다
+    if locked:
+        st.warning(f"지금 분석 결과는 {', '.join(_kick_name(k) for k in done if k)} 기준입니다. "
+                   f"다른 킥({_kick_name(kick)})을 분석하려면 사이드바에서 '분석 결과 지우기'를 누른 뒤 킥을 다시 고르세요.")
     mode = st.radio("입력", ["내 영상 업로드", "예시 데이터로 체험 (템플릿 합성)"], horizontal=True,
                     label_visibility="collapsed")
     c1, c2 = st.columns([2, 1])
@@ -98,9 +118,11 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
         if model is None:
             st.warning(model_help())
             return
+        c1.markdown(f"**{_kick_name(kick)}** 영상을 올려 주세요 (측면 또는 후면)")
         ups = c1.file_uploader(f"킥 영상 (mp4, mov, avi · 최대 30초, 200 MB · 한 번에 {MAX_FILES}개까지)",
-                               type=["mp4", "mov", "avi"], accept_multiple_files=True,
-                               help="측면·후면 영상이나 여러 번 찬 영상을 함께 올리면 각각 분석합니다.")
+                               type=["mp4", "mov", "avi"], accept_multiple_files=True, key="video_upload",
+                               help="여러 영상을 함께 올리면 모두 고른 킥으로 각각 분석합니다 "
+                                    "(측면·후면 영상, 같은 킥을 여러 번 찬 영상).")
         if not ups:
             return
         if len(ups) > MAX_FILES:
@@ -126,7 +148,8 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
             ready.append((up, {**info, "fps": fps}))
         if not ready:
             return
-        if st.button(f"▶ 분석 시작 ({len(ready)}개)" if len(ready) > 1 else "▶ 분석 시작", type="primary"):
+        label = f"▶ {_kick_name(kick)} 기준으로 분석 시작" + (f" ({len(ready)}개)" if len(ready) > 1 else "")
+        if st.button(label, type="primary", disabled=locked):
             analyses = st.session_state.setdefault(ANALYSES, {})
             first = None
             for n, (up, info) in enumerate(ready, 1):
@@ -141,29 +164,27 @@ def _input_section(default_height_cm: int, foot: str = "R") -> None:
                     continue
                 bar.progress(1.0, text=f"[{n}/{len(ready)}] {up.name} — 추출 완료, 임시 영상 파일을 삭제했습니다.")
                 analyses[up.file_id] = {"id": up.file_id, "raw": raw, "thumbs": thumbs, "name": up.name,
-                                        "height_cm": height_cm, "meta_fps": info["fps"], "demo": None}
+                                        "height_cm": height_cm, "meta_fps": info["fps"], "demo": False, "kick": kick}
                 st.session_state.pop(f"fps_{up.file_id}", None)   # 사이드바 fps를 새로 고른 값으로
                 first = first or up.file_id
             if first:
                 st.session_state[STATE] = first
     else:
-        kicks = available_kicks()
-        d1, d2, d3, d4 = c1.columns(4)
-        demo_kick = d1.selectbox("예시 킥", kicks, format_func=_kick_name)
+        d2, d3, d4 = c1.columns(3)
         demo_view = d2.selectbox("촬영 방향", ["side", "rear"], format_func=lambda v: VIEW_NAMES[v])
         demo_fps = d3.selectbox("촬영 fps", [30, 60, 120, 240], index=2)
         noise = d4.checkbox("측정 노이즈", value=True, help="σ = 키의 0.5% 가우시안 노이즈")
-        st.caption("기준 템플릿으로 가짜 관절 좌표를 만들어 전체 분석 과정을 체험합니다 (실제 영상 아님). "
+        st.caption(f"{_kick_name(kick)} 기준 템플릿으로 가짜 관절 좌표를 만들어 전체 분석 과정을 체험합니다 (실제 영상 아님). "
                    "후면 예시는 3D 모델을 뒤에서 본 좌표입니다.")
-        if st.button("▶ 분석 시작", type="primary"):
-            raw = synthesize(load_kick(demo_kick), height_cm / 100, demo_fps,
+        if st.button("▶ 분석 시작", type="primary", disabled=locked):
+            raw = synthesize(load_kick(kick), height_cm / 100, demo_fps,
                              noise_frac=0.005 if noise else 0.0, view=demo_view,
                              left_footed=foot == "L", seed=1)
-            sid = f"demo_{demo_kick}_{demo_view}_{demo_fps}_{noise}_{height_cm}_{foot}"
+            sid = f"demo_{kick}_{demo_view}_{demo_fps}_{noise}_{height_cm}_{foot}"
             st.session_state.setdefault(ANALYSES, {})[sid] = {
                 "id": sid, "raw": raw, "thumbs": None,
-                "name": f"예시: {_kick_name(demo_kick)} · {VIEW_NAMES[demo_view]} ({'왼발' if foot == 'L' else '오른발'})",
-                "height_cm": height_cm, "meta_fps": float(demo_fps), "demo": demo_kick}
+                "name": f"예시: {_kick_name(kick)} · {VIEW_NAMES[demo_view]} ({'왼발' if foot == 'L' else '오른발'})",
+                "height_cm": height_cm, "meta_fps": float(demo_fps), "demo": True, "kick": kick}
             st.session_state[STATE] = sid
 
 
@@ -207,35 +228,57 @@ def _event_section(p, sid: str):
     return ev
 
 
-def _classification_section(p, ev, sid: str) -> str:
-    """분류 결과 + 수동 선택. 최종 선택된 킥 id를 반환."""
-    c = classify(p, ev)
-    col1, col2 = st.columns([1, 1.2])
-    with col1:
-        st.markdown(f"**상위 3개 후보 (템플릿 유사도)** · 규칙 게이트: {c.gate}")
-        for k, conf in c.top3:
-            st.progress(float(conf), text=f"{_kick_name(k)} — {conf:.0%}")
-        if c.method.startswith("실제 영상"):
-            st.caption(f"비교 방식: **{c.method}** · 유사도 = 직접 찍어 모은 킥 영상 중 가장 비슷한 영상과의 관절 각도 흐름 "
-                       "유사도입니다. 정답 확률이 아닙니다.")
-        else:
-            st.caption("비교 방식: **내장 애니메이션과 비교** · 유사도 = 애니메이션과 관절 각도 흐름이 얼마나 비슷한지입니다. "
-                       "정답 확률이 아닙니다. 실제 영상에서는 정확도가 낮아(애니메이션이 추정값, 측면에서 발 방향이 안 보임) "
-                       "참고용입니다. 킥 종류별 실제 영상을 모아 참조 데이터를 만들면 정확도가 올라갑니다.")
-    with col2:
-        st.markdown("**판단 근거**")
-        for e in c.evidence:
-            st.markdown(f"- {e}")
-    if c.group:
-        st.info(f"**{c.group}**로 보입니다 (상위 후보 유사도 차이 < 15%p). {GROUP_NOTE}")
-    elif c.uncertain:
-        st.warning("유사도가 낮아 하나의 킥으로 단정하지 않습니다. 아래에서 직접 선택하세요.")
-    elif any(c.best in m for m in GROUPS.values()):
-        st.caption(f"참고: {GROUP_NOTE}")
+def _kick_select(data: dict, key: str) -> str:
+    """'분석할 킥' 선택 상자. 기본값은 업로드 전에 고른 킥(data["kick"]). 피드백 기준 킥은 항상 이 값."""
     kicks = available_kicks()
-    sel = st.selectbox("분석할 킥 종류 (직접 고칠 수 있습니다)", kicks, index=kicks.index(c.best),
-                       format_func=_kick_name, key=f"kick_sel_{sid}")
-    return sel
+    default = data.get("kick") if data.get("kick") in kicks else kicks[0]
+    return st.selectbox("분석할 킥 종류 (잘못 골랐다면 여기서 바꿀 수 있습니다)", kicks, index=kicks.index(default),
+                        format_func=_kick_name, key=key)
+
+
+def _shape_classification(p, ev):
+    """참고용 자동 분류 (측면 영상만). 분류할 수 없으면 None."""
+    try:
+        return classify(p, ev)
+    except ValueError:
+        return None
+
+
+def _mismatch_info(kick_id: str, c) -> None:
+    """선택한 킥과 동작 모양이 뚜렷이 다를 때만 한 줄 안내 (판단은 video.classify.mismatch_note)."""
+    note = mismatch_note(kick_id, c) if c is not None else None
+    if note:
+        st.info(note)
+
+
+def _classification_section(c) -> None:
+    """참고: 동작 모양 비교 (자동 분류 상위 3개 + 판단 근거). 접힌 상태로 보여 주고, 피드백 기준 킥은 바꾸지 않는다."""
+    if c is None:
+        return
+    with st.expander("🔎 참고: 동작 모양 비교 (어느 킥의 모범 동작과 관절 각도 흐름이 비슷한지)", expanded=False):
+        st.caption("피드백은 항상 내가 고른 킥 기준입니다. 이 비교는 참고용이며 킥 종류를 바꾸지 않습니다.")
+        col1, col2 = st.columns([1, 1.2])
+        with col1:
+            st.markdown(f"**상위 3개 후보 (템플릿 유사도)** · 규칙 게이트: {c.gate}")
+            for k, conf in c.top3:
+                st.progress(float(conf), text=f"{_kick_name(k)} — {conf:.0%}")
+            if c.method.startswith("실제 영상"):
+                st.caption(f"비교 방식: **{c.method}** · 유사도 = 직접 찍어 모은 킥 영상 중 가장 비슷한 영상과의 관절 각도 "
+                           "흐름 유사도입니다. 정답 확률이 아닙니다.")
+            else:
+                st.caption("비교 방식: **내장 애니메이션과 비교** · 유사도 = 애니메이션과 관절 각도 흐름이 얼마나 비슷한지입니다. "
+                           "정답 확률이 아닙니다. 실제 영상에서는 정확도가 낮아(애니메이션이 추정값, 측면에서 발 방향이 안 보임) "
+                           "참고용입니다.")
+        with col2:
+            st.markdown("**판단 근거**")
+            for e in c.evidence:
+                st.markdown(f"- {e}")
+        if c.group:
+            st.info(f"**{c.group}**로 보입니다 (상위 후보 유사도 차이 < 15%p). {GROUP_NOTE}")
+        elif c.uncertain:
+            st.caption("유사도가 낮아 동작 모양만으로는 하나의 킥을 짚기 어렵습니다.")
+        elif any(c.best in m for m in GROUPS.values()):
+            st.caption(f"참고: {GROUP_NOTE}")
 
 
 def _feedback_section(fb, view: str = "side") -> pd.DataFrame:
@@ -399,10 +442,10 @@ def _combined_section(analyses: dict, views: dict) -> None:
             st.error(f"{label} 영상에서 임팩트를 찾지 못했습니다. '영상 하나씩' 보기에서 임팩트 프레임을 지정하세요.")
             return
 
-    st.markdown("### ① 킥 종류")
-    st.caption("킥 종류는 측면 영상으로 추천합니다. 후면 정보(발 방향 등)는 실제 영상에서 아직 안정적으로 측정되지 않아 "
-               "분류에는 쓰지 않고 피드백에만 씁니다.")
-    kick_id = _classification_section(ps, evs, f"combined_{si}")
+    st.markdown("### ① 분석할 킥")
+    kick_id = _kick_select(ds, f"kick_sel_combined_{si}")
+    c = _shape_classification(ps, evs)
+    _mismatch_info(kick_id, c)
 
     st.markdown(f"### ② 통합 피드백 — {_kick_name(kick_id)} 기준 (측면 + 후면)")
     fb = merge_feedback(make_feedback(kick_id, compute_metrics(ps, evs)),
@@ -419,6 +462,8 @@ def _combined_section(analyses: dict, views: dict) -> None:
         hl = ["l_knee"]
         st.plotly_chart(_rear_comparison(_fig_key(pr, evr, kick_id, tuple(hl)), pr, evr, kick, tuple(hl)),
                         width="stretch", config={"displayModeBar": False}, key="cmb_rear")
+    st.markdown("### ④ 참고: 동작 모양 비교 (측면)")
+    _classification_section(c)
     if not table.empty:
         st.download_button("통합 피드백 표 (CSV)", table.to_csv(index=False).encode("utf-8-sig"),
                            file_name="kick_feedback_combined.csv", mime="text/csv")
@@ -447,10 +492,8 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         if mode == "측면 + 후면 함께":
             with st.sidebar:
                 st.divider()
-                if st.button(f"분석 결과 모두 지우기 ({len(ids)}개)"):
-                    st.session_state.pop(STATE, None)
-                    st.session_state.pop(ANALYSES, None)
-                    st.rerun()
+                st.button(f"분석 결과 모두 지우기 ({len(ids)}개)", on_click=_clear_results,
+                          help="다른 킥을 분석하려면 결과를 지운 뒤 킥을 다시 고르세요.")
             _combined_section(analyses, views)
             return
     if len(ids) > 1:
@@ -470,10 +513,8 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         view_label = st.radio("촬영 방향", list(VIEW_OPTIONS), key=f"view_{sid}",
                               help="자동 감지: 발이 옆으로 길게 보이면 측면, 짧게(카메라 쪽을 향해) 보이면 후면으로 판단하고, "
                                    "애매할 때만 양 어깨 간격을 봅니다.")
-        if st.button("분석 결과 지우기" if len(ids) == 1 else f"분석 결과 모두 지우기 ({len(ids)}개)"):
-            st.session_state.pop(STATE, None)
-            st.session_state.pop(ANALYSES, None)
-            st.rerun()
+        st.button("분석 결과 지우기" if len(ids) == 1 else f"분석 결과 모두 지우기 ({len(ids)}개)",
+                  on_click=_clear_results, help="다른 킥을 분석하려면 결과를 지운 뒤 킥을 다시 고르세요.")
 
     st.divider()
     st.markdown(f"### 분석 대상: {data['name']}")
@@ -501,24 +542,21 @@ def render(default_height_cm: int, foot: str = "R") -> None:
     st.markdown("### ① 동작 단계 검출")
     ev = _event_section(p, f"{sid}_{p.view}")
     if ev.impact is None:
-        st.error("임팩트를 찾지 못해 분류·피드백을 진행할 수 없습니다. 위에서 임팩트 프레임을 직접 지정하세요.")
+        st.error("임팩트를 찾지 못해 피드백을 진행할 수 없습니다. 위에서 임팩트 프레임을 직접 지정하세요.")
         return
 
+    st.markdown("### ② 분석할 킥")
+    kick_id = _kick_select(data, f"kick_sel_{sid}")
     if p.view == "rear":
-        st.markdown("### ② 킥 종류 선택")
         st.info(REAR_LIMIT_NOTE)
-        kicks = available_kicks()
-        default = data.get("demo") if data.get("demo") in kicks else "instep"
-        kick_id = st.selectbox("분석할 킥 종류", kicks, index=kicks.index(default), format_func=_kick_name,
-                               key=f"kick_sel_rear_{sid}")
         st.markdown(f"### ③ 피드백 — 후면(관상면) · {_kick_name(kick_id)}")
         fb = make_feedback(kick_id, compute_frontal_metrics(p, ev), rear_rules(kick_id))
         table = _feedback_section(fb, "rear")
         st.markdown("### ④ 내 동작 vs 기준 동작 (뒤에서 본 모습)")
         _rear_visual_section(p, ev, kick_id, data, fb)
     else:
-        st.markdown("### ② 킥 분류")
-        kick_id = _classification_section(p, ev, sid)
+        c = _shape_classification(p, ev)
+        _mismatch_info(kick_id, c)
 
         st.markdown(f"### ③ 피드백 — {_kick_name(kick_id)} 기준")
         if fps < LOW_FPS:
@@ -530,7 +568,10 @@ def render(default_height_cm: int, foot: str = "R") -> None:
         _visual_section(p, ev, kick_id, data)
         _template_section(p, ev, kick_id, data)
 
-    st.markdown("### ⑤ 결과 다운로드")
+        st.markdown("### ⑤ 참고: 동작 모양 비교")
+        _classification_section(c)
+
+    st.markdown(f"### {'⑤' if p.view == 'rear' else '⑥'} 결과 다운로드")
     t0 = p.t[ev.impact]
     series = pd.DataFrame({"t (s)": p.t, "임팩트 기준 t (s)": p.t - t0,
                            "단계": [_phase_of(ev, i) for i in range(p.n)],

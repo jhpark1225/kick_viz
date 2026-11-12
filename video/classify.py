@@ -1,4 +1,8 @@
-"""킥 자동 분류: ① 규칙 게이트로 후보를 좁히고 ② 템플릿 DTW 유사도로 순위를 매긴다."""
+"""킥 자동 분류 (참고용): ① 규칙 게이트로 후보를 좁히고 ② 템플릿 DTW 유사도로 순위를 매긴다.
+
+앱에서 피드백 기준 킥은 항상 사용자가 고른다. 분류 결과는 '동작 모양 비교'로만 보여 주고,
+선택한 킥과 뚜렷이 다를 때 다시 확인하라는 안내(mismatch_note)에만 쓴다.
+"""
 
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -32,8 +36,7 @@ GROUPS: dict[str, list[str]] = {
     "인스텝 계열(인스텝/감아차기)": INSTEP_FAMILY,
     "사이드 계열(인사이드/아웃사이드)": ["inside", "outside"],
 }
-GROUP_NOTE = ("공의 회전·발 안쪽/바깥쪽 사용 여부는 측면 영상 포즈만으로 구분하기 어렵습니다. "
-              "아래에서 직접 선택하세요.")
+GROUP_NOTE = "공의 회전·발 안쪽/바깥쪽 사용 여부는 측면 영상 포즈만으로 구분하기 어렵습니다."
 
 
 @dataclass
@@ -221,3 +224,21 @@ def classify(p: Processed, ev: Events | None = None, reference: list[Example] | 
     group, members = find_group(ranking)
     return Classification(ranking=ranking, gate=gate_name, candidates=cands, evidence=evidence[:3],
                           group=group, group_members=members, distances=dist, method=method)
+
+
+def same_group(a: str, b: str) -> bool:
+    """두 킥이 측면 2D로 구분하기 어려운 같은 그룹(GROUPS)인지."""
+    return any(a in m and b in m for m in GROUPS.values())
+
+
+def mismatch_note(selected: str, c: Classification) -> str | None:
+    """사용자가 고른 킥과 동작 모양(자동 분류 1위)이 뚜렷이 다를 때만 다시 확인하라는 안내 문구.
+
+    같은 킥이거나, 같은 그룹(인스텝/감아차기, 인사이드/아웃사이드 — 측면으로 원래 구분 어려움)이거나,
+    분류 신뢰도가 낮으면(c.uncertain) None. 분류는 참고용이므로 선택을 바꾸지 않고 안내만 한다.
+    """
+    best = c.best
+    if best == selected or c.uncertain or same_group(selected, best):
+        return None
+    return (f"선택한 킥({load_kick(selected)['name_ko']})과 동작 모양이 {load_kick(best)['name_ko']}에 더 가깝게 "
+            "보입니다. 킥 종류를 다시 확인해 보세요. (측면 영상만으로는 발의 어느 부분으로 찼는지 볼 수 없어 참고용입니다)")

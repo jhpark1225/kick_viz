@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from biomech.kick_loader import available_kicks, load_kick
-from video.classify import (GROUPS, classify, dtw_distance, find_group, softmax_conf)
+from video.classify import (GROUPS, Classification, classify, dtw_distance, find_group, mismatch_note, softmax_conf)
 from video.preprocess import preprocess
 from video.synthetic import synthesize
 
@@ -74,3 +74,41 @@ def test_group_display_rule():
 def test_softmax_monotonic():
     r = softmax_conf({"a": 0.1, "b": 0.3, "c": 0.2})
     assert [k for k, _ in r] == ["a", "c", "b"]
+
+
+def _fake(ranking):
+    """순위만 정한 분류 결과 (그룹 판정은 classify와 같은 규칙)."""
+    group, members = find_group(ranking)
+    return Classification(ranking=ranking, gate="지면 킥", candidates=[], evidence=[], group=group,
+                          group_members=members)
+
+
+def test_mismatch_note_same_kick():
+    assert mismatch_note("instep", _fake([("instep", 0.8), ("toe", 0.1), ("chip", 0.1)])) is None
+
+
+def test_mismatch_note_same_group():
+    """인스텝·감아차기, 인사이드·아웃사이드는 측면으로 원래 구분이 어려워 안내하지 않는다."""
+    assert mismatch_note("curve", _fake([("instep", 0.8), ("toe", 0.1), ("chip", 0.1)])) is None
+    assert mismatch_note("outside", _fake([("inside", 0.8), ("toe", 0.1), ("chip", 0.1)])) is None
+
+
+def test_mismatch_note_low_confidence():
+    """1위 신뢰도가 낮거나(< 0.5) 그룹 표시면 안내하지 않는다."""
+    assert mismatch_note("inside", _fake([("instep", 0.4), ("toe", 0.35), ("chip", 0.25)])) is None
+    assert mismatch_note("chip", _fake([("instep", 0.5), ("curve", 0.4), ("toe", 0.1)])) is None
+
+
+def test_mismatch_note_different_group_confident():
+    note = mismatch_note("inside", _fake([("instep", 0.8), ("toe", 0.1), ("chip", 0.1)]))
+    assert note is not None
+    assert "인사이드 킥" in note and "인스텝 킥" in note and "참고용" in note
+
+
+def test_mismatch_note_on_synthetic_video():
+    """합성 인스텝 영상을 로빙으로 골랐을 때: 실제 분류 결과로도 같은 규칙이 적용된다."""
+    c = run("instep")
+    note = mismatch_note("chip", c)
+    assert (note is None) == c.uncertain
+    assert mismatch_note(c.best, c) is None
+
