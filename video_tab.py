@@ -356,7 +356,9 @@ def _rear_visual_section(p, ev, kick_id: str, data: dict, fb) -> None:
     st.plotly_chart(_rear_comparison(_fig_key(p, ev, kick_id, tuple(hl)), p, ev, kick, tuple(hl)), width="stretch",
                     config={"displayModeBar": False},
                     key="rear_cmp")
-    st.caption("왼쪽 = 내 동작(뒤에서 본 모습), 오른쪽 = 기준 템플릿을 3D 모델로 만들어 뒤에서 본 모습. "
+    st.caption("왼쪽 = 내 동작(뒤에서 본 모습), 오른쪽 = 기준 템플릿을 3D 모델로 만들어 **디딤발 뒤 3.5 m, 허리 높이 "
+               "카메라**로 원근으로 본 모습 (실제 스마트폰 촬영과 같은 방식). 카메라에 가까울수록 크고 아래에 보이므로 "
+               "도움닫기·백스윙 때 발이 아래쪽 점선(뒤)으로, 팔로스루 때 위쪽 점선(앞)으로 움직이는 것이 앞뒤 움직임입니다. "
                "템플릿은 측면 각도 모델이라 무릎 외반·몸통 옆 기울기가 0°이고, 골반 기울기는 '관상면 보정값'"
                "(kick_hip_lift)에서 나옵니다.")
     st.markdown("**관상면 각도** · 초록 띠 = 기준 범위")

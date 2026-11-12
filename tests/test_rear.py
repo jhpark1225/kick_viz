@@ -105,6 +105,42 @@ def test_rear_impact_timing(kick_id):
 
 
 @pytest.mark.parametrize("kick_id", GROUND_KICKS)
+def test_rear_plant_timing(kick_id):
+    """후면 디딤: 원근 카메라로 본 합성 데이터에서 템플릿 디딤 시각 ±2프레임 (도움닫기 때 발이 낮게 보여도)."""
+    kick = load_kick(kick_id)
+    t_true = next(kf["t"] for kf in kick["keyframes"] if kf["phase"] == "디딤") - kick["keyframes"][0]["t"]
+    for opts in ({}, dict(noise_frac=0.005, seed=2)):
+        _, ev = rear(kick_id, **opts)
+        assert ev.frames["디딤"] is not None, opts
+        assert abs(ev.time("디딤") - t_true) * FPS <= 2 + 1e-9, opts
+
+
+def test_rear_perspective_shows_depth():
+    """원근 후면: 카메라에 가까운 도움닫기 초반이 임팩트 때보다 크게 보이고, 백스윙 때 뒤로 접은 발은
+    카메라 쪽으로 와서 크게 보인다. 정사영이면 크기 차이가 없다(앞뒤 움직임이 사라짐)."""
+    from biomech.body3d import foot_yaw_series
+    from biomech.kinematics import compute_motion
+    from video.synthetic import rear_camera_x, rear_landmarks
+    kick = load_kick("instep")
+    m = compute_motion(kick, H, 300)
+    i_imp = int(np.argmin(np.abs(m.t - kick["impact"]["time"])))
+    i_back = int(np.argmin(m.angles["r_hip"][:i_imp]))          # 백스윙 = 고관절 최대 신전
+    persp = rear_landmarks(m.points, H, rear_camera_x(kick, m), foot_yaw_series(kick, m.t))
+    ortho = rear_landmarks(m.points, H)
+    width = lambda lm, i: lm["r_hip"][i, 0] - lm["l_hip"][i, 0]
+    assert width(persp, 0) > 1.15 * width(persp, i_imp)
+    assert width(ortho, 0) == pytest.approx(width(ortho, i_imp))
+    # 정사영 x = 실제 좌우 위치. 백스윙 때 뒤로 접은 발은 카메라에 가까워 크게(몸 중심에서 더 멀리) 보인다
+    assert abs(persp["r_heel"][i_back, 0]) > 1.15 * abs(ortho["r_heel"][i_back, 0])
+    # 인사이드 킥: 임팩트 때 발을 바깥으로 돌려(고관절 외회전) 뒤에서 발이 옆으로 보인다
+    kick = load_kick("inside")
+    m = compute_motion(kick, H, 300)
+    i_imp = int(np.argmin(np.abs(m.t - kick["impact"]["time"])))
+    lm = rear_landmarks(m.points, H, rear_camera_x(kick, m), foot_yaw_series(kick, m.t))
+    assert abs(lm["r_toe"][i_imp, 0] - lm["r_heel"][i_imp, 0]) > 0.1
+
+
+@pytest.mark.parametrize("kick_id", GROUND_KICKS)
 def test_rear_template_no_improvements(kick_id):
     """템플릿을 뒤에서 본 동작은 후면 기준을 모두 만족한다."""
     fb = rear_feedback(kick_id)

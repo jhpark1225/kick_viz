@@ -263,10 +263,47 @@ def rear_traces(xy: dict[str, np.ndarray], H: float, highlight: list[str], text:
 
 
 def template_rear_xy(kick: dict, H: float) -> tuple[np.ndarray, dict[str, np.ndarray]]:
-    """템플릿을 3D 모델로 만들어 뒤에서 본 좌표 (시각은 임팩트 기준)."""
-    from video.synthetic import rear_landmarks
+    """템플릿을 3D 모델로 만들어 뒤에 둔 카메라로 원근으로 본 좌표 (시각은 임팩트 기준, 디딤발 깊이에서 m)."""
+    from biomech.body3d import foot_yaw_series
+    from video.synthetic import rear_camera_x, rear_landmarks
     m = compute_motion(kick, H, 300)
-    return m.t - kick["impact"]["time"], rear_landmarks(m.points, H)
+    return m.t - kick["impact"]["time"], rear_landmarks(m.points, H, rear_camera_x(kick, m),
+                                                        foot_yaw_series(kick, m.t))
+
+
+REAR_DEPTH_GUIDES_M = (-1.0, -0.5, 0.0, 0.5, 1.0)   # 디딤발(공) 기준 앞뒤 거리선 (m, + = 차는 방향)
+
+
+def _rear_ground_y(offset_m: float, H: float) -> float:
+    """디딤발에서 앞뒤로 offset_m 떨어진 바닥이 후면 카메라 화면에서 보이는 높이 (디딤발 깊이 기준 m)."""
+    from video.synthetic import REAR_CAMERA_DIST_M as D, REAR_CAMERA_HEIGHT_RATIO
+    yc = REAR_CAMERA_HEIGHT_RATIO * H
+    return yc - yc * D / (D + offset_m)
+
+
+def _rear_depth_guides(fig: go.Figure, kick: dict, H: float, dx: float) -> None:
+    """기준 동작 쪽에 원근으로 본 바닥 거리선(디딤발 기준 앞뒤 0.5 m 간격)과 공을 그린다 (모든 프레임 공통 도형).
+
+    원근에서는 먼 바닥일수록 화면 위쪽(카메라 높이 쪽)으로 모이므로, 발이 이 선들 사이에서 위아래로 움직이는 것이
+    곧 앞뒤 움직임이다 (도움닫기·백스윙 = 아래쪽 선, 팔로스루 = 위쪽 선).
+    """
+    from biomech.body3d import side_z
+    from video.synthetic import REAR_CAMERA_DIST_M as D, REAR_CAMERA_HEIGHT_RATIO
+    yc = REAR_CAMERA_HEIGHT_RATIO * H
+    half_w = 0.6
+    for off in REAR_DEPTH_GUIDES_M:
+        s = D / (D + off)
+        y = _rear_ground_y(off, H)
+        fig.add_shape(type="line", x0=dx - half_w * s, x1=dx + half_w * s, y0=y, y1=y, layer="below",
+                      line=dict(color="#c9d3e3", width=2 if off == 0 else 1, dash=None if off == 0 else "dot"))
+        fig.add_annotation(x=dx + half_w * s, y=y, xanchor="left", showarrow=False, font=dict(size=10, color="#8a97ad"),
+                           text="디딤발" if off == 0 else f"{off:+.1f} m")
+    # 공: 차는 다리 쪽, 디딤발보다 조금 앞 (반지름 0.11 m)
+    r, off = 0.11, 0.10
+    s = D / (D + off)
+    bx, by = dx - side_z("r_ankle", H) * s, yc + (r - yc) * s
+    fig.add_shape(type="circle", x0=bx - r * s, x1=bx + r * s, y0=by - r * s, y1=by + r * s, layer="below",
+                  fillcolor="#f1f3f7", line=dict(color="#8a97ad", width=1.5))
 
 
 def rear_comparison_figure(p: Processed, ev: Events, kick: dict, highlight: list[str] | None = None) -> go.Figure:
@@ -286,8 +323,8 @@ def rear_comparison_figure(p: Processed, ev: Events, kick: dict, highlight: list
     dx = span_u.max() - span_k.min() + 0.5
     kp = {k: v + np.array([dx, 0.0]) for k, v in kp.items()}
     allp = np.concatenate(list(up.values()) + list(kp.values()))
-    xr = [allp[:, 0].min() - 0.3, allp[:, 0].max() + 0.3]
-    yr = [min(allp[:, 1].min(), 0) - 0.1, allp[:, 1].max() + 0.45]
+    xr = [allp[:, 0].min() - 0.3, max(allp[:, 0].max() + 0.3, dx + 1.2)]     # 바닥 거리선·라벨까지
+    yr = [min(allp[:, 1].min(), _rear_ground_y(min(REAR_DEPTH_GUIDES_M), H), 0) - 0.1, allp[:, 1].max() + 0.45]
     text_xy = (xr[0] + 0.05, yr[1] - 0.1)
     hl = highlight if highlight is not None else ["l_knee"]
 
@@ -300,6 +337,7 @@ def rear_comparison_figure(p: Processed, ev: Events, kick: dict, highlight: list
 
     frames = [go.Frame(data=frame_data(i), name=str(i)) for i in range(n)]
     fig = go.Figure(data=frames[0].data, frames=frames, layout=_layout(xr, yr))
+    _rear_depth_guides(fig, kick, H, dx)
     fig.add_annotation(x=float(np.median(span_u)), y=yr[1] - 0.02, text="<b>내 동작 (뒤에서)</b>", showarrow=False,
                        font=dict(color=USER_COLOR))
     fig.add_annotation(x=float(np.median(span_k)) + dx, y=yr[1] - 0.02, text=f"<b>기준: {kick['name_ko']}</b>",

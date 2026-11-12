@@ -144,8 +144,11 @@ def detect_plant_rear(p: Processed, impact: int) -> int | None:
     """후면 디딤: 디딤발 최저점이 지면 근처(< 5 cm)이면서 발목 속도 < 0.3 m/s인 상태가 임팩트까지 이어지기 시작한 프레임.
 
     뒤에서 보면 접근(앞뒤) 움직임이 화면에 거의 안 보이므로 발이 지면에 닿았는지를 함께 본다.
+    지면 높이는 **임팩트 순간 디딤발 높이**를 기준으로 한다. 뒤에 둔 카메라는 원근으로 보므로 도움닫기 때(카메라에
+    가까움) 발이 더 낮게 보여, 영상 전체 최저점(`ground_level`)을 지면으로 쓰면 디딤발이 땅에 있어도 떠 보인다.
     """
-    low = np.minimum(p.xy["l_heel"][:, 1], p.xy["l_toe"][:, 1])[:impact + 1] < REAR_PLANT_HEIGHT
+    foot_y = np.minimum(p.xy["l_heel"][:, 1], p.xy["l_toe"][:, 1])
+    low = foot_y[:impact + 1] < foot_y[impact] + REAR_PLANT_HEIGHT
     slow = speed(p.xy["l_ankle"], p.fps)[:impact + 1] < PLANT_SPEED
     ok = low & slow
     if not ok[-1]:
